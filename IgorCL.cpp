@@ -2,7 +2,6 @@
 #include "cl.hpp"
 
 #include "IgorCL.h"
-#include "cl.hpp"
 #include "IgorCLOperations.h"
 
 // Global Variables (none)
@@ -146,6 +145,10 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             } else {
                 deviceText += "unknown:\r";
             }
+
+			deviceText += "Device name:";
+			deviceText += devices[j].getInfo<CL_DEVICE_NAME>();
+			deviceText += "\r";
             
             deviceText += "OpenCL version:";
             deviceText += devices[j].getInfo<CL_DEVICE_VERSION>();
