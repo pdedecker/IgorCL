@@ -112,7 +112,7 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
 	int err = 0;
     cl_int status;
     
-    char noticeString[128];
+    char noticeString[256];
     
     // fetch information on the platforms
     std::vector<cl::Platform> platforms;
@@ -122,70 +122,58 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
     XOPNotice(noticeString);
     
     std::string infoText;
+    std::string deviceText;
+    cl_bool clBool;
+    cl_ulong clUlong;
     for (int i = 0; i < platforms.size(); ++i) {
-        status = platforms[i].getInfo(CL_PLATFORM_PROFILE, &infoText);
-        if (status != CL_SUCCESS)
-            return NOMEM;
+        infoText = platforms[i].getInfo<CL_PLATFORM_VENDOR>();
+        infoText += ", version ";
+        infoText += platforms[i].getInfo<CL_PLATFORM_VERSION>();
         XOPNotice(infoText.c_str());
         XOPNotice("\r");
         
-        status = platforms[i].getInfo(CL_PLATFORM_VERSION, &infoText);
-        if (status != CL_SUCCESS)
-            return NOMEM;
-        XOPNotice(infoText.c_str());
-        XOPNotice("\r");
-        
-        status = platforms[i].getInfo(CL_PLATFORM_NAME, &infoText);
-        if (status != CL_SUCCESS)
-            return NOMEM;
-        XOPNotice(infoText.c_str());
-        XOPNotice("\r");
-    }
-    
-    if (platforms.empty())
-        return err;
-    
-    std::vector<cl::Device> devices;
-    status = platforms[0].getDevices(CL_DEVICE_TYPE_ALL, &devices);
-    if (status != CL_SUCCESS)
-        return NOMEM;
-    sprintf(noticeString, "Found %d devices\r", devices.size());
-    XOPNotice(noticeString);
-    
-    for (int i = 0; i < devices.size(); ++i) {
-        cl_device_type deviceType;
-        cl_uint uintType;
-        cl_bool boolType;
-        std::string stringType;
-        cl_ulong ulongType;
-        devices[i].getInfo<cl_device_type>(CL_DEVICE_TYPE, &deviceType);
-        if (deviceType == CL_DEVICE_TYPE_CPU) {
-            XOPNotice("Found CPU\r");
-        } else if (deviceType == CL_DEVICE_TYPE_GPU) {
-            XOPNotice("Found GPU\r");
-        } else if (deviceType == CL_DEVICE_TYPE_ACCELERATOR) {
-            XOPNotice("Found accelerator\r");
-        } else {
-            XOPNotice("Found unknown device type\r");
+        std::vector<cl::Device> devices;
+        status = platforms[0].getDevices(CL_DEVICE_TYPE_ALL, &devices);
+        deviceText = "Devices on this platform:\r";
+        for (int j = 0; j < devices.size(); ++j) {
+            cl_device_type deviceType = devices[j].getInfo<CL_DEVICE_TYPE>();
+            if (deviceType == CL_DEVICE_TYPE_CPU) {
+                deviceText += "CPU:\r";
+            } else if (deviceType == CL_DEVICE_TYPE_GPU) {
+                deviceText += "GPU:\r";
+            } else if (deviceType == CL_DEVICE_TYPE_ACCELERATOR) {
+                deviceText += "Accelerator:\r";
+            } else {
+                deviceText += "unknown:\r";
+            }
+            
+            deviceText += "OpenCL version:";
+            deviceText += devices[j].getInfo<CL_DEVICE_VERSION>();
+            deviceText += "\r";
+            
+            clBool = devices[j].getInfo<CL_DEVICE_AVAILABLE>();
+            if (clBool) {
+                deviceText += "device is available\r";
+            } else {
+                deviceText += "device is unavailable\r";
+            }
+            
+            clUlong = devices[j].getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+            sprintf(noticeString, "Global memory: %d\r", clUlong);
+            deviceText += noticeString;
+            clUlong = devices[j].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+            sprintf(noticeString, "Local memory: %d\r", clUlong);
+            deviceText += noticeString;
+            clUlong = devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+            sprintf(noticeString, "Max allocation size: %d\r", clUlong);
+            deviceText += noticeString;
+            
+            deviceText += "Device extensions: ";
+            deviceText += devices[j].getInfo<CL_DEVICE_EXTENSIONS>();
+            deviceText += "\r";
+            
+            XOPNotice(deviceText.c_str());
         }
-        
-        devices[i].getInfo<cl_bool>(CL_DEVICE_AVAILABLE, &boolType);
-        
-        devices[i].getInfo<std::string>(CL_DEVICE_NAME, &stringType);
-        XOPNotice(stringType.c_str());
-        XOPNotice("\r");
-        
-        devices[i].getInfo<cl_ulong>(CL_DEVICE_GLOBAL_MEM_SIZE, &ulongType);
-        sprintf(noticeString, "Global device memory in bytes: %d\r", ulongType);
-        XOPNotice(noticeString);
-        
-        devices[i].getInfo<cl_ulong>(CL_DEVICE_LOCAL_MEM_SIZE, &ulongType);
-        sprintf(noticeString, "Local device memory in bytes: %d\r", ulongType);
-        XOPNotice(noticeString);
-        
-        devices[i].getInfo<cl_uint>(CL_DEVICE_MAX_COMPUTE_UNITS, &uintType);
-        sprintf(noticeString, "Max compute units: %d\r", uintType);
-        XOPNotice(noticeString);
     }
     
 	return err;
