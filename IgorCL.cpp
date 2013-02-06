@@ -187,16 +187,16 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
                 
                 indices[0] = 4;
                 clUlong = devices[j].getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-                sprintf(noticeString, "%d", clUlong);
+                sprintf(noticeString, "%lld", clUlong);
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
                 indices[0] = 5;
-                sprintf(noticeString, "%d", clUlong);
+                sprintf(noticeString, "%lld", clUlong);
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
                 indices[0] = 6;
                 clUlong = devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-                sprintf(noticeString, "%d", clUlong);
+                sprintf(noticeString, "%lld", clUlong);
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
                 indices[0] = 7;
