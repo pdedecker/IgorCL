@@ -282,6 +282,7 @@
   <ItemGroup>
     <ClCompile Include="..\IgorCL.cpp" />
     <ClCompile Include="..\IgorCLOperations.cpp" />
+    <ClCompile Include="..\IgorCLUtilities.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\IgorCL.rc">
@@ -324,6 +325,7 @@
     <ClInclude Include="..\cl.hpp" />
     <ClInclude Include="..\IgorCL.h" />
     <ClInclude Include="..\IgorCLOperations.h" />
+    <ClInclude Include="..\IgorCLUtilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
