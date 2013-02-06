@@ -1,0 +1,34 @@
+/*	XOP-specific resources for IgorCL on Windows
+
+	This file is compiled by the resource compiler and creates XOP-specific
+	resources that IGOR looks for in an XOP module.
+*/
+
+#include "XOPResources.h"			// Defines XOP-specific symbols.
+
+// Custom error messages
+1100 STR#
+BEGIN
+	"IgorCL requires Igor Pro 6.0 or later.\0",		// OLD_IGOR
+
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
+
+// No menu items
+
+1100 XOPI							// XOPI - Describes general XOP properties to IGOR. 
+BEGIN
+	XOP_VERSION,					// Version number of host XOP system.
+	DEV_SYS_CODE,					// Code for development system used to make XOP.
+	0,								// Obsolete - set to zero.
+	0,								// Obsolete - set to zero.
+	XOP_TOOLKIT_VERSION				// XOP Toolkit version.
+END
+
+1100 XOPC							// Describes operations that the XOP adds to IGOR.
+BEGIN
+	"IgorCL\0",
+	waveOp | XOPOp | compilableOp,
+
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
