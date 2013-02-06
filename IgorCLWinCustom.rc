@@ -30,5 +30,8 @@ BEGIN
 	"IgorCL\0",
 	waveOp | XOPOp | compilableOp,
 
+	"IgorCLInfo\0",
+	waveOp | XOPOp | compilableOp,
+
 	"\0"							// NOTE: NULL required to terminate the resource.
 END

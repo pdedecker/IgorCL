@@ -18,16 +18,34 @@
     <ResourceCompile Include="..\IgorCL.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+    <ResourceCompile Include="..\IgorCLWinCustom.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\..\XOPSupport\IGOR.lib" />
     <Library Include="..\..\XOPSupport\IGOR64.lib" />
     <Library Include="..\..\XOPSupport\VC10\XOPSupport.lib" />
     <Library Include="..\..\XOPSupport\VC10\XOPSupport64.lib" />
+    <Library Include="C:\Program Files (x86)\AMD APP\lib\x86\OpenCL.lib" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\IgorCL.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\IgorCLOperations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\cl.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IgorCL.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IgorCLOperations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
