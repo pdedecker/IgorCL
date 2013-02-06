@@ -3,6 +3,7 @@
 
 #include "IgorCL.h"
 #include "IgorCLOperations.h"
+#include "IgorCLUtilities.h"
 
 // Global Variables (none)
 
@@ -113,70 +114,99 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
     
     char noticeString[256];
     
-    // fetch information on the platforms
-    std::vector<cl::Platform> platforms;
-    cl::Platform::get(&platforms);
-    
-    sprintf(noticeString, "Found %d platforms\r", platforms.size());
-    XOPNotice(noticeString);
-    
-    std::string infoText;
-    std::string deviceText;
-    cl_bool clBool;
-    cl_ulong clUlong;
-    for (int i = 0; i < platforms.size(); ++i) {
-        infoText = platforms[i].getInfo<CL_PLATFORM_VENDOR>();
-        infoText += ", version ";
-        infoText += platforms[i].getInfo<CL_PLATFORM_VERSION>();
-        XOPNotice(infoText.c_str());
-        XOPNotice("\r");
+    try {
         
-        std::vector<cl::Device> devices;
-        status = platforms[0].getDevices(CL_DEVICE_TYPE_ALL, &devices);
-        deviceText = "Devices on this platform:\r";
-        for (int j = 0; j < devices.size(); ++j) {
-            cl_device_type deviceType = devices[j].getInfo<CL_DEVICE_TYPE>();
-            if (deviceType == CL_DEVICE_TYPE_CPU) {
-                deviceText += "CPU:\r";
-            } else if (deviceType == CL_DEVICE_TYPE_GPU) {
-                deviceText += "GPU:\r";
-            } else if (deviceType == CL_DEVICE_TYPE_ACCELERATOR) {
-                deviceText += "Accelerator:\r";
-            } else {
-                deviceText += "unknown:\r";
+        // fetch information on the platforms
+        std::vector<cl::Platform> platforms;
+        cl::Platform::get(&platforms);
+        
+        // create a text wave that will store the information
+        waveHndl platformsWave;
+        waveHndl devicesWave;
+        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+        IndexInt indices[MAX_DIMENSIONS];
+        dimensionSizes[0] = 2;
+        dimensionSizes[1] = platforms.size();
+        dimensionSizes[2] = 0;
+        Handle handle;
+        err = MDMakeWave(&platformsWave, "M_OpenCLPlatforms", NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
+        if (err)
+            return err;
+        
+        cl_bool clBool;
+        cl_ulong clUlong;
+        // platform information
+        for (int i = 0; i < platforms.size(); ++i) {
+            indices[1] = i;
+            indices[0] = 0;
+            StoreStringInTextWave(platforms[i].getInfo<CL_PLATFORM_VENDOR>().c_str(), platformsWave, indices);
+            indices[0] = 1;
+            StoreStringInTextWave(platforms[i].getInfo<CL_PLATFORM_VERSION>().c_str(), platformsWave, indices);
+            
+            // device information
+            std::vector<cl::Device> devices;
+            status = platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &devices);
+            
+            char deviceWaveName[50];
+            sprintf(deviceWaveName, "M_OpenCLDevices%d", i);
+            dimensionSizes[0] = 8;
+            dimensionSizes[1] = devices.size();
+            dimensionSizes[2] = 0;
+            Handle handle;
+            err = MDMakeWave(&devicesWave, deviceWaveName, NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
+            if (err)
+                return err;
+            
+            for (int j = 0; j < devices.size(); ++j) {
+                indices[1] = j;
+                indices[0] = 0;
+                cl_device_type deviceType = devices[j].getInfo<CL_DEVICE_TYPE>();
+                if (deviceType == CL_DEVICE_TYPE_CPU) {
+                    StoreStringInTextWave("CPU", devicesWave, indices);
+                } else if (deviceType == CL_DEVICE_TYPE_GPU) {
+                    StoreStringInTextWave("GPU", devicesWave, indices);
+                } else if (deviceType == CL_DEVICE_TYPE_ACCELERATOR) {
+                    StoreStringInTextWave("Accelerator", devicesWave, indices);
+                } else {
+                    StoreStringInTextWave("Unknown", devicesWave, indices);
+                }
+                
+                indices[0] = 1;
+                StoreStringInTextWave(devices[j].getInfo<CL_DEVICE_NAME>(), devicesWave, indices);
+                
+                indices[0] = 2;
+                StoreStringInTextWave(devices[j].getInfo<CL_DEVICE_VERSION>(), devicesWave, indices);
+                
+                indices[0] = 3;
+                clBool = devices[j].getInfo<CL_DEVICE_AVAILABLE>();
+                if (clBool) {
+                    StoreStringInTextWave("device is available", devicesWave, indices);
+                } else {
+                    StoreStringInTextWave("device is unavailable", devicesWave, indices);
+                }
+                
+                indices[0] = 4;
+                clUlong = devices[j].getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
+                sprintf(noticeString, "%d", clUlong);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 5;
+                sprintf(noticeString, "%d", clUlong);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 6;
+                clUlong = devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
+                sprintf(noticeString, "%d", clUlong);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 7;
+                StoreStringInTextWave(devices[j].getInfo<CL_DEVICE_EXTENSIONS>(), devicesWave, indices);
             }
-
-			deviceText += "Device name:";
-			deviceText += devices[j].getInfo<CL_DEVICE_NAME>();
-			deviceText += "\r";
-            
-            deviceText += "OpenCL version:";
-            deviceText += devices[j].getInfo<CL_DEVICE_VERSION>();
-            deviceText += "\r";
-            
-            clBool = devices[j].getInfo<CL_DEVICE_AVAILABLE>();
-            if (clBool) {
-                deviceText += "device is available\r";
-            } else {
-                deviceText += "device is unavailable\r";
-            }
-            
-            clUlong = devices[j].getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
-            sprintf(noticeString, "Global memory: %d\r", clUlong);
-            deviceText += noticeString;
-            clUlong = devices[j].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
-            sprintf(noticeString, "Local memory: %d\r", clUlong);
-            deviceText += noticeString;
-            clUlong = devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
-            sprintf(noticeString, "Max allocation size: %d\r", clUlong);
-            deviceText += noticeString;
-            
-            deviceText += "Device extensions: ";
-            deviceText += devices[j].getInfo<CL_DEVICE_EXTENSIONS>();
-            deviceText += "\r";
-            
-            XOPNotice(deviceText.c_str());
         }
+        
+    }
+    catch (...) {
+        return GENERAL_BAD_VIBS;
     }
     
 	return err;

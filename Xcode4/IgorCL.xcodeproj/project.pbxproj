@@ -18,6 +18,8 @@
 		D03F8E9916C2576100671EFC /* Kernels.cl in Sources */ = {isa = PBXBuildFile; fileRef = D073DF5616C18EBC004D1B51 /* Kernels.cl */; };
 		D073DF5216C18B99004D1B51 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D073DF5116C18B99004D1B51 /* OpenCL.framework */; };
 		D073DF5916C1921B004D1B51 /* cl.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D073DF5816C1921B004D1B51 /* cl.hpp */; };
+		D0779BCC16C294AB00E314C2 /* IgorCLUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */; };
+		D0779BCD16C294AB00E314C2 /* IgorCLUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = D0779BCB16C294AB00E314C2 /* IgorCLUtilities.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -47,6 +49,8 @@
 		D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCLOperations.cpp; path = ../IgorCLOperations.cpp; sourceTree = "<group>"; };
 		D073DF5616C18EBC004D1B51 /* Kernels.cl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.opencl; name = Kernels.cl; path = ../Kernels.cl; sourceTree = "<group>"; };
 		D073DF5816C1921B004D1B51 /* cl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = cl.hpp; path = ../cl.hpp; sourceTree = "<group>"; };
+		D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCLUtilities.cpp; path = ../IgorCLUtilities.cpp; sourceTree = "<group>"; };
+		D0779BCB16C294AB00E314C2 /* IgorCLUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IgorCLUtilities.h; path = ../IgorCLUtilities.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,6 +106,8 @@
 				AA5D4C57057E889500B0C55B /* IgorCL.cpp */,
 				D073DF5316C18DF7004D1B51 /* IgorCLOperations.h */,
 				D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */,
+				D0779BCB16C294AB00E314C2 /* IgorCLUtilities.h */,
+				D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */,
 				D073DF5816C1921B004D1B51 /* cl.hpp */,
 				D073DF5616C18EBC004D1B51 /* Kernels.cl */,
 			);
@@ -126,6 +132,7 @@
 				8D01CCC80486CAD60068D4B7 /* IgorCL_Prefix.pch in Headers */,
 				89A72B5610904BD5003AE340 /* IgorCL.h in Headers */,
 				D073DF5916C1921B004D1B51 /* cl.hpp in Headers */,
+				D0779BCD16C294AB00E314C2 /* IgorCLUtilities.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -204,6 +211,7 @@
 				AA5D4C59057E889500B0C55B /* IgorCL.cpp in Sources */,
 				D03F8E9816C24A8700671EFC /* IgorCLOperations.cpp in Sources */,
 				D03F8E9916C2576100671EFC /* Kernels.cl in Sources */,
+				D0779BCC16C294AB00E314C2 /* IgorCLUtilities.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
