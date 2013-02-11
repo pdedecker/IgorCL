@@ -1,5 +1,6 @@
 #include "XOPStandardHeaders.h"			// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include "cl.hpp"
+#include <vector>
 
 #include "IgorCL.h"
 #include "IgorCLOperations.h"
@@ -12,22 +13,51 @@
 struct IGORCLRuntimeParams {
 	// Flag parameters.
     
+	// Parameters for /PLTM flag group.
+	int PLTMFlagEncountered;
+	double PLTMFlag_platform;
+	int PLTMFlagParamsSet[1];
+    
+	// Parameters for /DEV flag group.
+	int DEVFlagEncountered;
+	double DEVFlag_device;
+	int DEVFlagParamsSet[1];
+    
+	// Parameters for /SRCT flag group.
+	int SRCTFlagEncountered;
+	Handle SRCTFlag_sourceText;
+	int SRCTFlagParamsSet[1];
+    
+	// Parameters for /SRCB flag group.
+	int SRCBFlagEncountered;
+	waveHndl SRCBFlag_sourceBinary;
+	int SRCBFlagParamsSet[1];
+    
+	// Parameters for /KERN flag group.
+	int KERNFlagEncountered;
+	Handle KERNFlag_kernelName;
+	int KERNFlagParamsSet[1];
+    
+	// Parameters for /WGRP flag group.
+	int WGRPFlagEncountered;
+	double WGRPFlag_wgSize0;
+	double WGRPFlag_wgSize1;
+	double WGRPFlag_wgSize2;
+	int WGRPFlagParamsSet[3];
+    
+	// Parameters for /RNG flag group.
+	int RNGFlagEncountered;
+	double RNGFlag_globalSize0;
+	double RNGFlag_globalSize1;
+	double RNGFlag_globalSize2;
+	int RNGFlagParamsSet[3];
+    
 	// Main parameters.
     
 	// Parameters for simple main group #0.
-	int waveAEncountered;
-	waveHndl waveA;
-	int waveAParamsSet[1];
-    
-	// Parameters for simple main group #1.
-	int waveBEncountered;
-	waveHndl waveB;
-	int waveBParamsSet[1];
-    
-	// Parameters for simple main group #2.
-	int waveCEncountered;
-	waveHndl waveC;
-	int waveCParamsSet[1];
+	int dataWavesEncountered;
+	waveHndl dataWaves[12];					// Optional parameter.
+	int dataWavesParamsSet[12];
     
 	// These are postamble fields that Igor sets.
 	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
@@ -55,43 +85,105 @@ typedef struct IGORCLInfoRuntimeParams* IGORCLInfoRuntimeParamsPtr;
 static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
 	int err = 0;
     
+    // Flag parameters.
+    
+    int platformIndex = 0;
+	if (p->PLTMFlagEncountered) {
+		// Parameter: p->PLTMFlag_platform
+        if (p->PLTMFlag_platform < 0)
+            return EXPECT_POS_NUM;
+        platformIndex = p->PLTMFlag_platform + 0.5;
+	}
+    
+    int deviceIndex = 0;
+	if (p->DEVFlagEncountered) {
+		// Parameter: p->DEVFlag_device
+        if (p->DEVFlag_device < 0)
+            return EXPECT_POS_NUM;
+        deviceIndex = p->PLTMFlag_platform + 0.5;
+	}
+    
+    bool sourceProvidedAsText = false;
+    std::string textSource;
+    if (p->SRCTFlagEncountered) {
+		// Parameter: p->SRCTFlag_sourceText (test for NULL handle before using)
+        if (p->SRCTFlag_sourceText == NULL)
+            return USING_NULL_STRVAR;
+        sourceProvidedAsText = true;
+        textSource = GetStdStringFromHandle(p->SRCTFlag_sourceText);
+	}
+    
+	if (p->SRCBFlagEncountered) {
+		// Parameter: p->SRCBFlag_sourceBinary (test for NULL handle before using)
+        if (p->SRCBFlag_sourceBinary == NULL)
+            return NULL_WAVE_OP;
+        if (sourceProvidedAsText)
+            return GENERAL_BAD_VIBS;    // program needs to be provided as text OR binary
+        return EXPECTED_STRING;
+	} else if (!sourceProvidedAsText) {
+        return EXPECTED_STRING;         // program needs to be provided as text OR binary
+    }
+    
+    std::string kernelName;
+	if (p->KERNFlagEncountered) {
+		// Parameter: p->KERNFlag_kernelName (test for NULL handle before using)
+        if (p->KERNFlag_kernelName == NULL)
+            return USING_NULL_STRVAR;
+        kernelName = GetStdStringFromHandle(p->KERNFlag_kernelName);
+	} else {
+        return EXPECTED_STRING;
+    }
+    
+    cl::NDRange globalRange;
+	if (p->RNGFlagEncountered) {
+		// Parameter: p->RNGFlag_globalSize0
+		// Parameter: p->RNGFlag_globalSize1
+		// Parameter: p->RNGFlag_globalSize2
+        if ((p->RNGFlag_globalSize0 < 0) || (p->RNGFlag_globalSize1 < 0) || (p->RNGFlag_globalSize2 < 0))
+            return EXPECT_POS_NUM;
+        size_t gRange0 = p->RNGFlag_globalSize0 + 0.5;
+        size_t gRange1 = p->RNGFlag_globalSize1 + 0.5;
+        size_t gRange2 = p->RNGFlag_globalSize2 + 0.5;
+        globalRange = cl::NDRange(gRange0, gRange1, gRange2);
+	} else {
+        return GENERAL_BAD_VIBS;
+    }
+    
+    cl::NDRange workgroupSize;
+    if (p->WGRPFlagEncountered) {
+		// Parameter: p->WGRPFlag_wgSize0
+		// Parameter: p->WGRPFlag_wgSize1
+		// Parameter: p->WGRPFlag_wgSize2
+        if ((p->WGRPFlag_wgSize0 < 0) || (p->WGRPFlag_wgSize1 < 0) || (p->WGRPFlag_wgSize2 < 0))
+            return EXPECT_POS_NUM;
+        size_t wRange0 = p->WGRPFlag_wgSize0 + 0.5;
+        size_t wRange1 = p->WGRPFlag_wgSize1 + 0.5;
+        size_t wRange2 = p->WGRPFlag_wgSize2 + 0.5;
+        workgroupSize = cl::NDRange(wRange0, wRange1, wRange2);
+	} else {
+        workgroupSize = cl::NullRange;
+    }
+    
 	// Main parameters.
-    waveHndl waveA, waveB, waveC;
-	if (p->waveAEncountered) {
-		// Parameter: p->waveA (test for NULL handle before using)
-        if (p->waveA == NULL)
-            return NOWAV;
-        if (WaveType(p->waveA) != NT_FP32)
-            return NOWAV;
-        waveA = p->waveA;
-	} else {
-        return NOWAV;
-    }
-    
-	if (p->waveBEncountered) {
-		// Parameter: p->waveB (test for NULL handle before using)
-        if (p->waveB == NULL)
-            return NOWAV;
-        if (WaveType(p->waveB) != NT_FP32)
-            return NOWAV;
-        waveB = p->waveB;
-	} else {
-        return NOWAV;
-    }
-    
-	if (p->waveCEncountered) {
-		// Parameter: p->waveC (test for NULL handle before using)
-        if (p->waveC == NULL)
-            return NOWAV;
-        if (WaveType(p->waveC) != NT_FP32)
-            return NOWAV;
-        waveC = p->waveC;
-	} else {
+    std::vector<waveHndl> waves;
+    int nDataWaves = 0;
+	if (p->dataWavesEncountered) {
+		// Array-style optional parameter: p->dataWaves
+		int* paramsSet = &p->dataWavesParamsSet[0];
+		for(int i=0; i<12; i++) {
+			if (paramsSet[i] == 0)
+				break;		// No more parameters.
+            if (p->dataWaves[i] == NULL)
+                return NULL_WAVE_OP;
+            
+            waves.push_back(p->dataWaves[i]);
+        }
+    } else {
         return NOWAV;
     }
     
     try {
-        VectorAdd(waveA, waveB, waveC);
+        DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, textSource);
     }
     catch (int e) {
         return e;
@@ -152,7 +244,6 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             dimensionSizes[0] = 8;
             dimensionSizes[1] = devices.size();
             dimensionSizes[2] = 0;
-            Handle handle;
             err = MDMakeWave(&devicesWave, deviceWaveName, NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
             if (err)
                 return err;
@@ -218,7 +309,7 @@ static int RegisterIGORCL(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IGORCLRuntimeParams structure as well.
-	cmdTemplate = "IGORCL wave:waveA, wave:waveB, wave:waveC";
+	cmdTemplate = "IGORCL /PLTM=number:platform /DEV=number:device /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /RNG={number:globalSize0, number:globalSize1, number:globalSize2} wave[12]:dataWaves";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLRuntimeParams), (void*)ExecuteIGORCL, 0);

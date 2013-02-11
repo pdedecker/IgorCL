@@ -10,9 +10,17 @@
 #define __IgorCL__IgorCLUtilities__
 
 #include <string>
+#include <boost/smart_ptr.hpp>
+
 #include "XOPStandardHeaders.h"
 
-void StoreStringInTextWave(std::string str, waveHndl textWave, IndexInt* indices);
+void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* indices);
+
+std::string GetStdStringFromHandle(const Handle handle);
+
+Handle PutStdStringInHandle(const std::string theString);
+
+size_t WaveDataSizeInBytes(waveHndl wave);
 
 
 #endif /* defined(__IgorCL__IgorCLUtilities__) */

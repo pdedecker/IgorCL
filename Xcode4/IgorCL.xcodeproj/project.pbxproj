@@ -250,7 +250,10 @@
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO = YES;
-				HEADER_SEARCH_PATHS = ../../XOPSupport;
+				HEADER_SEARCH_PATHS = (
+					../../XOPSupport,
+					/opt/local/include,
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Library/Bundles";
 				LIBRARY_SEARCH_PATHS = ../../XOPSupport/Xcode;
@@ -284,7 +287,10 @@
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO = YES;
-				HEADER_SEARCH_PATHS = ../../XOPSupport;
+				HEADER_SEARCH_PATHS = (
+					../../XOPSupport,
+					/opt/local/include,
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Library/Bundles";
 				LIBRARY_SEARCH_PATHS = ../../XOPSupport/Xcode;
@@ -316,7 +322,10 @@
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				GENERATE_PKGINFO = YES;
-				HEADER_SEARCH_PATHS = ../../XOPSupport;
+				HEADER_SEARCH_PATHS = (
+					../../XOPSupport,
+					/opt/local/include,
+				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Library/Bundles";
 				LIBRARY_SEARCH_PATHS = ../../XOPSupport/Xcode;

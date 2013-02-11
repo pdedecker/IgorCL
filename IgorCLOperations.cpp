@@ -8,8 +8,133 @@
 
 #include "IgorCLOperations.h"
 
-#include "cl.hpp"
 #include <fstream>
+
+#include "IgorCLUtilities.h"
+
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string* sourceText, const std::vector<char>* sourceBinary);
+
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string& sourceText) {
+    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, &sourceText, NULL);
+}
+
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<char>& sourceBinary) {
+    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, NULL, &sourceBinary);
+}
+
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string* sourceText, const std::vector<char>* sourceBinary) {
+    
+    size_t nWaves = waves.size();
+    
+    // vectors that will hold a pointer to the data and the size of the data
+    std::vector<void*> dataPointers; std::vector<size_t> dataSizes;
+    dataPointers.reserve(nWaves); dataSizes.reserve(nWaves);
+    for (size_t i = 0; i < nWaves; i+=1) {
+        dataPointers.push_back(reinterpret_cast<void*>(WaveData(waves.at(i))));
+        dataSizes.push_back(WaveDataSizeInBytes(waves.at(i)));
+    }
+    
+    // initialize the platforms and devices
+    cl_int status;
+    std::vector<cl::Platform> platforms;
+    status = cl::Platform::get(&platforms);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    cl::Platform platform = platforms.at(platformIndex);
+    
+    std::vector<cl::Device> devices;
+    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    cl::Device device = devices.at(deviceIndex);
+    
+    // initialize the context
+    std::vector<cl::Device> deviceAsVector;
+    deviceAsVector.push_back(device);
+    cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // fetch a queue on the platform/device combination
+    cl::CommandQueue commandQueue(context, device, 0, &status);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // get the program, either using text or using source
+    cl::Program program;
+    if (sourceText != NULL) {
+        // use text source
+        program = cl::Program(context, *sourceText, &status);
+    } else {
+        // use binary
+        const void* programPointer = &(sourceBinary->at(0));
+        size_t programSize = sourceBinary->size();
+        std::pair<const void*, size_t> sourcePair(programPointer, programSize);
+        std::vector<std::pair<const void*, size_t> > binaryAsVector;
+        binaryAsVector.push_back(sourcePair);
+        program = cl::Program(context, deviceAsVector, binaryAsVector, NULL, &status);
+    }
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // build the program
+    status = program.build();
+    if (status != CL_SUCCESS) {
+        std::string buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        for (int i = 0; i < buildLog.size(); ++i) {
+            if (buildLog[i] == '\n')
+                buildLog[i] = '\r';
+        }
+        XOPNotice(buildLog.c_str());
+        throw int(NOMEM);
+    }
+    
+    // fetch the kernel
+    cl::Kernel kernel(program, kernelName.c_str(), &status);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // create buffers for all of the input data
+    std::vector<cl::Buffer> buffers;
+    buffers.reserve(nWaves);
+    for (size_t i = 0; i < nWaves; i+=1) {
+        cl::Buffer buffer(context, CL_MEM_READ_WRITE, dataSizes.at(i), NULL, &status);
+        if (status != CL_SUCCESS)
+            throw int(NOMEM);
+        buffers.push_back(buffer);
+    }
+    
+    // and copy all of the data to the device
+    for (size_t i = 0; i < nWaves; i+=1) {
+        status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
+        if (status != CL_SUCCESS)
+            throw int(NOMEM);
+    }
+    
+    // set arguments for the kernel
+    for (size_t i = 0; i < nWaves; i+=1) {
+        status = kernel.setArg(i, buffers.at(i));
+        if (status != CL_SUCCESS)
+            throw int(NOMEM);
+    }
+    
+    // perform the actual calculation
+    status = commandQueue.enqueueNDRangeKernel(kernel, cl::NullRange, globalRange, workgroupSize, NULL, NULL);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // copy arguments back into the waves
+    for (size_t i = 0; i < nWaves; i+=1) {
+        status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
+        if (status != CL_SUCCESS)
+            throw int(NOMEM);
+    }
+    
+    // block until everything is finished
+    status = commandQueue.finish();
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+}
 
 void VectorAdd(waveHndl waveA, waveHndl waveB, waveHndl waveC) {
     int err = 0;
