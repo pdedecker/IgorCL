@@ -16,7 +16,9 @@ resource 'vers' (2) {						// Igor version info.
 resource 'STR#' (1100) {
 	{
 		/* [1] */
-		"IgorCL requires Igor Pro 6.0 or later.",
+		"Igor too old",
+        /* [2] */
+		"OpenCL returned an error (see command line output)",
 	}
 };
 

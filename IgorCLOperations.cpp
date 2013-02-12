@@ -11,6 +11,7 @@
 #include <fstream>
 
 #include "IgorCLUtilities.h"
+#include "IgorCLConstants.h"
 
 void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<int>& memFlags, const std::string* sourceText, const std::vector<char>* sourceBinary);
 
@@ -46,13 +47,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Platform> platforms;
     status = cl::Platform::get(&platforms);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     cl::Platform platform = platforms.at(platformIndex);
     
     std::vector<cl::Device> devices;
     status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     cl::Device device = devices.at(deviceIndex);
     
     // initialize the context
@@ -60,12 +61,12 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     deviceAsVector.push_back(device);
     cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // fetch a queue on the platform/device combination
     cl::CommandQueue commandQueue(context, device, 0, &status);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // get the program, either using text or using source
     cl::Program program;
@@ -82,7 +83,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         program = cl::Program(context, deviceAsVector, binaryAsVector, NULL, &status);
     }
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // build the program
     status = program.build();
@@ -93,13 +94,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
                 buildLog[i] = '\r';
         }
         XOPNotice(buildLog.c_str());
-        throw int(NOMEM);
+        throw IgorCLError(status);
     }
     
     // fetch the kernel
     cl::Kernel kernel(program, kernelName.c_str(), &status);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // create buffers for all of the input data
     std::vector<cl::Buffer> buffers;
@@ -110,7 +111,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
             hostPointer = dataPointers.at(i);
         cl::Buffer buffer(context, openCLMemFlags.at(i), dataSizes.at(i), hostPointer, &status);
         if (status != CL_SUCCESS)
-            throw int(NOMEM);
+            throw IgorCLError(status);
         buffers.push_back(buffer);
     }
     
@@ -120,20 +121,20 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
             continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
-            throw int(NOMEM);
+            throw IgorCLError(status);
     }
     
     // set arguments for the kernel
     for (size_t i = 0; i < nWaves; i+=1) {
         status = kernel.setArg(i, buffers.at(i));
         if (status != CL_SUCCESS)
-            throw int(NOMEM);
+            throw IgorCLError(status);
     }
     
     // perform the actual calculation
     status = commandQueue.enqueueNDRangeKernel(kernel, cl::NullRange, globalRange, workgroupSize, NULL, NULL);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // copy arguments back into the waves, unless we have used host memory
     for (size_t i = 0; i < nWaves; i+=1) {
@@ -141,13 +142,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
             continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
-            throw int(NOMEM);
+            throw IgorCLError(status);
     }
     
     // block until everything is finished
     status = commandQueue.finish();
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
 }
 
 std::vector<char> compileSource(const int platformIndex, const int deviceIndex, const std::string programSource) {
@@ -156,13 +157,13 @@ std::vector<char> compileSource(const int platformIndex, const int deviceIndex, 
     std::vector<cl::Platform> platforms;
     status = cl::Platform::get(&platforms);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     cl::Platform platform = platforms.at(platformIndex);
     
     std::vector<cl::Device> devices;
     status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     cl::Device device = devices.at(deviceIndex);
     
     // initialize the context
@@ -170,12 +171,12 @@ std::vector<char> compileSource(const int platformIndex, const int deviceIndex, 
     deviceAsVector.push_back(device);
     cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // initialize the program and have it build the source code
     cl::Program program(context, programSource, &status);
     if (status != CL_SUCCESS)
-        throw int(NOMEM);
+        throw IgorCLError(status);
     
     // build the program
     status = program.build();
@@ -186,7 +187,7 @@ std::vector<char> compileSource(const int platformIndex, const int deviceIndex, 
                 buildLog[i] = '\r';
         }
         XOPNotice(buildLog.c_str());
-        throw int(NOMEM);
+        throw IgorCLError(status);
     }
     
     std::vector<char*> programBinary;

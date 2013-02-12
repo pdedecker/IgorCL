@@ -5,6 +5,7 @@
 #include "IgorCL.h"
 #include "IgorCLOperations.h"
 #include "IgorCLUtilities.h"
+#include "IgorCLConstants.h"
 
 // Global Variables (none)
 
@@ -283,11 +284,13 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     catch (int e) {
         return e;
     }
-    /*catch (cl::Error e) {
-        XOPNotice(e.what());
-        XOPNotice("\r");
-        return GENERAL_BAD_VIBS;
-    }*/
+    catch (IgorCLError e) {
+        int errorCode = e.getErrorCode();
+        char noticeStr[20];
+        sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
+        XOPNotice(noticeStr);
+        return OPENCL_ERROR;
+    }
     catch (...) {
         return GENERAL_BAD_VIBS;
     }
@@ -340,6 +343,13 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
     }
     catch (int e) {
         return e;
+    }
+    catch (IgorCLError e) {
+        int errorCode = e.getErrorCode();
+        char noticeStr[20];
+        sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
+        XOPNotice(noticeStr);
+        return OPENCL_ERROR;
     }
     catch (...) {
         return GENERAL_BAD_VIBS;

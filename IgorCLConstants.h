@@ -19,4 +19,15 @@ const int IgorCLHostWriteOnly = 1 << 4;
 const int IgorCLHostReadOnly = 1 << 5;
 const int IgorCLHostNoAccess = 1 << 6;
 
+class IgorCLError {
+public:
+    IgorCLError(int e) {_errorCode = e;}
+    ~IgorCLError() {;}
+    
+    int getErrorCode() const {return _errorCode;}
+    
+private:
+    int _errorCode;
+};
+
 #endif
