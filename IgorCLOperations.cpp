@@ -106,10 +106,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Buffer> buffers;
     buffers.reserve(nWaves);
     for (size_t i = 0; i < nWaves; i+=1) {
+        int memFlags = 0;
         void* hostPointer = NULL;
-        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+        if (openCLMemFlags.size() > 0)
+            memFlags = openCLMemFlags.at(i);
+        if (memFlags & CL_MEM_USE_HOST_PTR)
             hostPointer = dataPointers.at(i);
-        cl::Buffer buffer(context, openCLMemFlags.at(i), dataSizes.at(i), hostPointer, &status);
+        cl::Buffer buffer(context, memFlags, dataSizes.at(i), hostPointer, &status);
         if (status != CL_SUCCESS)
             throw IgorCLError(status);
         buffers.push_back(buffer);
@@ -117,7 +120,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     
     // and copy all of the data to the device, unless we want to use the host memory
     for (size_t i = 0; i < nWaves; i+=1) {
-        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+        if ((openCLMemFlags.size() > 0) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
@@ -138,7 +141,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     
     // copy arguments back into the waves, unless we have used host memory
     for (size_t i = 0; i < nWaves; i+=1) {
-        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+        if ((openCLMemFlags.size() > 0) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)

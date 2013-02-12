@@ -1,6 +1,7 @@
 #include "XOPStandardHeaders.h"			// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
 #include "cl.hpp"
 #include <vector>
+#include <stdexcept>
 
 #include "IgorCL.h"
 #include "IgorCLOperations.h"
@@ -284,12 +285,15 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     catch (int e) {
         return e;
     }
-    catch (IgorCLError e) {
+    catch (IgorCLError& e) {
         int errorCode = e.getErrorCode();
         char noticeStr[20];
         sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
         XOPNotice(noticeStr);
         return OPENCL_ERROR;
+    }
+    catch (std::range_error& e) {
+        return INDEX_OUT_OF_RANGE;
     }
     catch (...) {
         return GENERAL_BAD_VIBS;
@@ -344,12 +348,15 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
     catch (int e) {
         return e;
     }
-    catch (IgorCLError e) {
+    catch (IgorCLError& e) {
         int errorCode = e.getErrorCode();
         char noticeStr[20];
         sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
         XOPNotice(noticeStr);
         return OPENCL_ERROR;
+    }
+    catch (std::range_error& e) {
+        return INDEX_OUT_OF_RANGE;
     }
     catch (...) {
         return GENERAL_BAD_VIBS;
