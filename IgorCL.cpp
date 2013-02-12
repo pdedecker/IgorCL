@@ -135,7 +135,7 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
 		// Parameter: p->DEVFlag_device
         if (p->DEVFlag_device < 0)
             return EXPECT_POS_NUM;
-        deviceIndex = p->PLTMFlag_platform + 0.5;
+        deviceIndex = p->DEVFlag_device + 0.5;
 	}
     
     bool sourceProvidedAsText = false;
@@ -349,6 +349,8 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
         
         cl_bool clBool;
         cl_ulong clUlong;
+        cl_uint clUint;
+        std::vector<size_t> sizeTVector;
         // platform information
         for (int i = 0; i < platforms.size(); ++i) {
             indices[1] = i;
@@ -363,7 +365,7 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             
             char deviceWaveName[50];
             sprintf(deviceWaveName, "M_OpenCLDevices%d", i);
-            dimensionSizes[0] = 8;
+            dimensionSizes[0] = 10;
             dimensionSizes[1] = devices.size();
             dimensionSizes[2] = 0;
             err = MDMakeWave(&devicesWave, deviceWaveName, NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
@@ -404,15 +406,26 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
                 indices[0] = 5;
-                sprintf(noticeString, "%lld", clUlong);
-                StoreStringInTextWave(noticeString, devicesWave, indices);
-                
-                indices[0] = 6;
                 clUlong = devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
                 sprintf(noticeString, "%lld", clUlong);
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
+                indices[0] = 6;
+                clUlong = devices[j].getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+                sprintf(noticeString, "%lld", clUlong);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
                 indices[0] = 7;
+                clUint = devices[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+                sprintf(noticeString, "%u", clUint);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 8;
+                sizeTVector = devices[j].getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>();
+                sprintf(noticeString, "(%lu, %lu, %lu)", sizeTVector.at(0), sizeTVector.at(1), sizeTVector.at(2));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 9;
                 StoreStringInTextWave(devices[j].getInfo<CL_DEVICE_EXTENSIONS>(), devicesWave, indices);
             }
         }
