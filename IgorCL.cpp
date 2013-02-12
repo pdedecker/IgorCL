@@ -8,9 +8,9 @@
 
 // Global Variables (none)
 
-// Runtime param structure for IGORCL operation.
+// Runtime param structure for IgorCL operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
-struct IGORCLRuntimeParams {
+struct IgorCLRuntimeParams {
 	// Flag parameters.
     
 	// Parameters for /PLTM flag group.
@@ -38,6 +38,13 @@ struct IGORCLRuntimeParams {
 	Handle KERNFlag_kernelName;
 	int KERNFlagParamsSet[1];
     
+	// Parameters for /RNG flag group.
+	int RNGFlagEncountered;
+	double RNGFlag_globalSize0;
+	double RNGFlag_globalSize1;
+	double RNGFlag_globalSize2;
+	int RNGFlagParamsSet[3];
+    
 	// Parameters for /WGRP flag group.
 	int WGRPFlagEncountered;
 	double WGRPFlag_wgSize0;
@@ -45,12 +52,10 @@ struct IGORCLRuntimeParams {
 	double WGRPFlag_wgSize2;
 	int WGRPFlagParamsSet[3];
     
-	// Parameters for /RNG flag group.
-	int RNGFlagEncountered;
-	double RNGFlag_globalSize0;
-	double RNGFlag_globalSize1;
-	double RNGFlag_globalSize2;
-	int RNGFlagParamsSet[3];
+	// Parameters for /MFLG flag group.
+	int MFLGFlagEncountered;
+	waveHndl MFLGFlag_memoryFlagsWave;
+	int MFLGFlagParamsSet[1];
     
 	// Main parameters.
     
@@ -63,8 +68,8 @@ struct IGORCLRuntimeParams {
 	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
 	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
 };
-typedef struct IGORCLRuntimeParams IGORCLRuntimeParams;
-typedef struct IGORCLRuntimeParams* IGORCLRuntimeParamsPtr;
+typedef struct IgorCLRuntimeParams IgorCLRuntimeParams;
+typedef struct IgorCLRuntimeParams* IgorCLRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
 // Runtime param structure for IgorCLCompile operation.
@@ -117,7 +122,7 @@ typedef struct IGORCLInfoRuntimeParams IGORCLInfoRuntimeParams;
 typedef struct IGORCLInfoRuntimeParams* IGORCLInfoRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
-static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
+static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
 	int err = 0;
     
     // Flag parameters.
@@ -217,6 +222,34 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
         workgroupSize = cl::NullRange;
     }
     
+    std::vector<int> memFlags;
+    if (p->MFLGFlagEncountered) {
+		// Parameter: p->MFLGFlag_memoryFlagsWave (test for NULL handle before using)
+        if (p->MFLGFlag_memoryFlagsWave == NULL)
+            return NULL_WAVE_OP;
+        if (WaveType(p->MFLGFlag_memoryFlagsWave) & NT_CMPLX)
+            return COMPLEX_TO_REAL_LOSS;
+        
+        waveHndl memFlagsWave = p->MFLGFlag_memoryFlagsWave;
+        // require that the wave is 1D
+        int numDimensions;
+        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+        err = MDGetWaveDimensions(memFlagsWave, &numDimensions, dimensionSizes);
+        if (err)
+            return err;
+        if (numDimensions != 1)
+            return INCOMPATIBLE_DIMENSIONING;
+        
+        // copy all flag values into memFlags
+        IndexInt indices[MAX_DIMENSIONS];
+        double value[2];
+        for (size_t i = 0; i < dimensionSizes[0]; i+=1) {
+            indices[0] = i;
+            err = MDGetNumericWavePointValue(memFlagsWave, indices, value);
+            memFlags.push_back(value[0] + 0.5);
+        }
+	}
+    
 	// Main parameters.
     std::vector<waveHndl> waves;
     int nDataWaves = 0;
@@ -235,11 +268,16 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
         return NOWAV;
     }
     
+    // if memory flags have been provided then require that there are as many flags as there are waves
+    if ((memFlags.size() > 0) && (memFlags.size() != waves.size())) {
+        return GENERAL_BAD_VIBS;
+    }
+    
     try {
         if (sourceProvidedAsText) {
-            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, textSource);
+            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, memFlags, textSource);
         } else {
-            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, programBinary);
+            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, memFlags, programBinary);
         }
     }
     catch (int e) {
@@ -438,16 +476,16 @@ static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
 	return err;
 }
 
-static int RegisterIGORCL(void) {
+static int RegisterIgorCL(void) {
 	const char* cmdTemplate;
 	const char* runtimeNumVarList;
 	const char* runtimeStrVarList;
     
-	// NOTE: If you change this template, you must change the IGORCLRuntimeParams structure as well.
-	cmdTemplate = "IGORCL /PLTM=number:platform /DEV=number:device /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /RNG={number:globalSize0, number:globalSize1, number:globalSize2} wave[12]:dataWaves";
+	// NOTE: If you change this template, you must change the IgorCLRuntimeParams structure as well.
+	cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave wave[12]:dataWaves";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
-	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLRuntimeParams), (void*)ExecuteIGORCL, 0);
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
 }
 
 static int RegisterIgorCLCompile(void) {
@@ -479,7 +517,7 @@ RegisterOperations(void) {
 	int result;
 	
 	// Register IgorCL operation.
-	if (result = RegisterIGORCL())
+	if (result = RegisterIgorCL())
 		return result;
     if (result = RegisterIgorCLCompile())
         return result;

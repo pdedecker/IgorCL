@@ -12,17 +12,17 @@
 
 #include "IgorCLUtilities.h"
 
-void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string* sourceText, const std::vector<char>* sourceBinary);
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<int>& memFlags, const std::string* sourceText, const std::vector<char>* sourceBinary);
 
-void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string& sourceText) {
-    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, &sourceText, NULL);
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<int>& memFlags, const std::string& sourceText) {
+    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, memFlags, &sourceText, NULL);
 }
 
-void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<char>& sourceBinary) {
-    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, NULL, &sourceBinary);
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<int>& memFlags, const std::vector<char>& sourceBinary) {
+    DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, memFlags, NULL, &sourceBinary);
 }
 
-void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::string* sourceText, const std::vector<char>* sourceBinary) {
+void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const cl::NDRange globalRange, const cl::NDRange workgroupSize, const std::string& kernelName, const std::vector<waveHndl>& waves, const std::vector<int>& memFlags, const std::string* sourceText, const std::vector<char>* sourceBinary) {
     
     size_t nWaves = waves.size();
     
@@ -32,6 +32,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     for (size_t i = 0; i < nWaves; i+=1) {
         dataPointers.push_back(reinterpret_cast<void*>(WaveData(waves.at(i))));
         dataSizes.push_back(WaveDataSizeInBytes(waves.at(i)));
+    }
+    
+    // convert IgorCL memflags to underlying OpenCL flags
+    std::vector<int> openCLMemFlags;
+    for (int i = 0; i < memFlags.size(); i+=1) {
+        int clFlags = ConvertIgorCLFlagsToOpenCLFlags(memFlags.at(i));
+        openCLMemFlags.push_back(clFlags);
     }
     
     // initialize the platforms and devices
@@ -98,14 +105,19 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Buffer> buffers;
     buffers.reserve(nWaves);
     for (size_t i = 0; i < nWaves; i+=1) {
-        cl::Buffer buffer(context, CL_MEM_READ_WRITE, dataSizes.at(i), NULL, &status);
+        void* hostPointer = NULL;
+        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+            hostPointer = dataPointers.at(i);
+        cl::Buffer buffer(context, openCLMemFlags.at(i), dataSizes.at(i), hostPointer, &status);
         if (status != CL_SUCCESS)
             throw int(NOMEM);
         buffers.push_back(buffer);
     }
     
-    // and copy all of the data to the device
+    // and copy all of the data to the device, unless we want to use the host memory
     for (size_t i = 0; i < nWaves; i+=1) {
+        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+            continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
             throw int(NOMEM);
@@ -123,8 +135,10 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     if (status != CL_SUCCESS)
         throw int(NOMEM);
     
-    // copy arguments back into the waves
+    // copy arguments back into the waves, unless we have used host memory
     for (size_t i = 0; i < nWaves; i+=1) {
+        if (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR)
+            continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
             throw int(NOMEM);

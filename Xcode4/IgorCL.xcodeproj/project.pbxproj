@@ -16,6 +16,7 @@
 		AA687D51057E97BD00628003 /* libXOPSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AA687D50057E97BD00628003 /* libXOPSupport.a */; };
 		D03F8E9816C24A8700671EFC /* IgorCLOperations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */; };
 		D03F8E9916C2576100671EFC /* Kernels.cl in Sources */ = {isa = PBXBuildFile; fileRef = D073DF5616C18EBC004D1B51 /* Kernels.cl */; };
+		D054FA1216CA5952005EA5F0 /* IgorCLConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = D054FA1116CA5952005EA5F0 /* IgorCLConstants.h */; };
 		D073DF5216C18B99004D1B51 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D073DF5116C18B99004D1B51 /* OpenCL.framework */; };
 		D073DF5916C1921B004D1B51 /* cl.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D073DF5816C1921B004D1B51 /* cl.hpp */; };
 		D0779BCC16C294AB00E314C2 /* IgorCLUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */; };
@@ -44,6 +45,7 @@
 		AA5D4C57057E889500B0C55B /* IgorCL.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCL.cpp; path = ../IgorCL.cpp; sourceTree = SOURCE_ROOT; };
 		AA5D4C58057E889500B0C55B /* IgorCL.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = IgorCL.r; path = ../IgorCL.r; sourceTree = SOURCE_ROOT; };
 		AA687D50057E97BD00628003 /* libXOPSupport.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libXOPSupport.a; path = ../../XOPSupport/Xcode4/libXOPSupport.a; sourceTree = SOURCE_ROOT; };
+		D054FA1116CA5952005EA5F0 /* IgorCLConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IgorCLConstants.h; path = ../IgorCLConstants.h; sourceTree = "<group>"; };
 		D073DF5116C18B99004D1B51 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = /System/Library/Frameworks/OpenCL.framework; sourceTree = "<absolute>"; };
 		D073DF5316C18DF7004D1B51 /* IgorCLOperations.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IgorCLOperations.h; path = ../IgorCLOperations.h; sourceTree = "<group>"; };
 		D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCLOperations.cpp; path = ../IgorCLOperations.cpp; sourceTree = "<group>"; };
@@ -108,6 +110,7 @@
 				D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */,
 				D0779BCB16C294AB00E314C2 /* IgorCLUtilities.h */,
 				D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */,
+				D054FA1116CA5952005EA5F0 /* IgorCLConstants.h */,
 				D073DF5816C1921B004D1B51 /* cl.hpp */,
 				D073DF5616C18EBC004D1B51 /* Kernels.cl */,
 			);
@@ -133,6 +136,7 @@
 				89A72B5610904BD5003AE340 /* IgorCL.h in Headers */,
 				D073DF5916C1921B004D1B51 /* cl.hpp in Headers */,
 				D0779BCD16C294AB00E314C2 /* IgorCLUtilities.h in Headers */,
+				D054FA1216CA5952005EA5F0 /* IgorCLConstants.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

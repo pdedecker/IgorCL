@@ -22,5 +22,7 @@ Handle PutStdStringInHandle(const std::string theString);
 
 size_t WaveDataSizeInBytes(waveHndl wave);
 
+int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags);
+
 
 #endif /* defined(__IgorCL__IgorCLUtilities__) */

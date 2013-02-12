@@ -7,6 +7,8 @@
 //
 
 #include "IgorCLUtilities.h"
+#include "IgorCLConstants.h"
+#include "cl.hpp"
 
 void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* indices) {
     int err;
@@ -80,4 +82,25 @@ size_t WaveDataSizeInBytes(waveHndl wave) {
         bytesPerPoint *= 2;
     
     return WavePoints(wave) * bytesPerPoint;
+}
+
+int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags) {
+    int openCLFlags = 0;
+    
+    if (igorCLFlags & IgorCLReadWrite)
+        openCLFlags |= CL_MEM_READ_WRITE;
+    if (igorCLFlags & IgorCLWriteOnly)
+        openCLFlags |= CL_MEM_READ_ONLY;
+    if (igorCLFlags & IgorCLReadOnly)
+        openCLFlags |= CL_MEM_READ_ONLY;
+    if (igorCLFlags & IgorCLUseHostPointer)
+        openCLFlags |= CL_MEM_USE_HOST_PTR;
+    /*if (igorCLFlags & IgorCLHostWriteOnly)
+        openCLFlags |= CL_MEM_HOST_WRITE_ONLY;
+    if (igorCLFlags & IgorCLHostReadOnly)
+        openCLFlags |= CL_MEM_HOST_READ_ONLY;
+    if (igorCLFlags & IgorCLHostNoAccess)
+        openCLFlags |= CL_MEM_HOST_NO_ACCESS;*/
+    
+    return openCLFlags;
 }
