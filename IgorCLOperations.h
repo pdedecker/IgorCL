@@ -18,6 +18,4 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
 
 std::vector<char> compileSource(const int platformIndex, const int deviceIndex, const std::string programSource);
 
-void VectorAdd(waveHndl waveA, waveHndl waveB, waveHndl waveC);
-
 #endif
