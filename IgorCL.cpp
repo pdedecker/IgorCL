@@ -67,6 +67,41 @@ typedef struct IGORCLRuntimeParams IGORCLRuntimeParams;
 typedef struct IGORCLRuntimeParams* IGORCLRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
+// Runtime param structure for IgorCLCompile operation.
+#pragma pack(2)	// All structures passed to Igor are two-byte aligned.
+struct IgorCLCompileRuntimeParams {
+	// Flag parameters.
+    
+	// Parameters for /PLTM flag group.
+	int PLTMFlagEncountered;
+	double PLTMFlag_platform;
+	int PLTMFlagParamsSet[1];
+    
+	// Parameters for /DEV flag group.
+	int DEVFlagEncountered;
+	double DEVFlag_device;
+	int DEVFlagParamsSet[1];
+    
+	// Parameters for /DEST flag group.
+	int DESTFlagEncountered;
+	DataFolderAndName DESTFlag_destination;
+	int DESTFlagParamsSet[1];
+    
+	// Main parameters.
+    
+	// Parameters for simple main group #0.
+	int programSourceEncountered;
+	Handle programSource;
+	int programSourceParamsSet[1];
+    
+	// These are postamble fields that Igor sets.
+	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
+	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+};
+typedef struct IgorCLCompileRuntimeParams IgorCLCompileRuntimeParams;
+typedef struct IgorCLCompileRuntimeParams* IgorCLCompileRuntimeParamsPtr;
+#pragma pack()	// Reset structure alignment to default.
+
 // Runtime param structure for IGORCLInfo operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
 struct IGORCLInfoRuntimeParams {
@@ -113,13 +148,31 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
         textSource = GetStdStringFromHandle(p->SRCTFlag_sourceText);
 	}
     
+    waveHndl programBinaryWave = NULL;
+    size_t nBytesInProgramBinary;
+    std::vector<char> programBinary;
 	if (p->SRCBFlagEncountered) {
 		// Parameter: p->SRCBFlag_sourceBinary (test for NULL handle before using)
         if (p->SRCBFlag_sourceBinary == NULL)
             return NULL_WAVE_OP;
         if (sourceProvidedAsText)
             return GENERAL_BAD_VIBS;    // program needs to be provided as text OR binary
-        return EXPECTED_STRING;
+        
+        programBinaryWave = p->SRCBFlag_sourceBinary;
+        // require a wave containing bytes
+        if (WaveType(programBinaryWave) != NT_I8)
+            return NT_INCOMPATIBLE;
+        // require that the wave is 1D
+        int numDimensions;
+        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+        err = MDGetWaveDimensions(programBinaryWave, &numDimensions, dimensionSizes);
+        if (err)
+            return err;
+        if (numDimensions != 1)
+            return INCOMPATIBLE_DIMENSIONING;
+        nBytesInProgramBinary = dimensionSizes[0];
+        programBinary.resize(nBytesInProgramBinary);
+        memcpy(reinterpret_cast<void*>(&programBinary[0]), WaveData(programBinaryWave), nBytesInProgramBinary);
 	} else if (!sourceProvidedAsText) {
         return EXPECTED_STRING;         // program needs to be provided as text OR binary
     }
@@ -183,7 +236,11 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
     }
     
     try {
-        DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, textSource);
+        if (sourceProvidedAsText) {
+            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, textSource);
+        } else {
+            DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, programBinary);
+        }
     }
     catch (int e) {
         return e;
@@ -196,6 +253,71 @@ static int ExecuteIGORCL(IGORCLRuntimeParamsPtr p) {
     catch (...) {
         return GENERAL_BAD_VIBS;
     }
+    
+	return err;
+}
+
+static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
+	int err = 0;
+    
+	// Flag parameters.
+    
+    int platformIndex = 0;
+	if (p->PLTMFlagEncountered) {
+		// Parameter: p->PLTMFlag_platform
+        platformIndex = p->PLTMFlag_platform + 0.5;
+	}
+    
+    int deviceIndex = 0;
+	if (p->DEVFlagEncountered) {
+		// Parameter: p->DEVFlag_device
+        deviceIndex = p->DEVFlag_device + 0.5;
+	}
+    
+    DataFolderAndName destination;
+	if (p->DESTFlagEncountered) {
+		// Parameter: p->DESTFlag_destination
+        destination = p->DESTFlag_destination;
+	} else {
+        destination.dfH = NULL;
+        strcpy(destination.name, "W_CompiledBinary");
+    }
+    
+	// Main parameters.
+    
+    std::string programSource;
+	if (p->programSourceEncountered) {
+		// Parameter: p->programSource (test for NULL handle before using)
+        if (p->programSource == NULL)
+            return EXPECTED_STRING;
+        programSource = GetStdStringFromHandle(p->programSource);
+	} else {
+        return EXPECTED_STRING;
+    }
+    
+    // do the actual compilation
+    std::vector<char> compiledBinary;
+    try {
+        compiledBinary = compileSource(platformIndex, deviceIndex, programSource);
+    }
+    catch (int e) {
+        return e;
+    }
+    catch (...) {
+        return GENERAL_BAD_VIBS;
+    }
+    
+    // copy the compiled binary back out to an Igor wave
+    size_t nBytes = compiledBinary.size();
+    CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+    dimensionSizes[0] = nBytes;
+    dimensionSizes[1] = 0;
+    waveHndl outputWave;
+    err = MDMakeWave(&outputWave, destination.name, destination.dfH, dimensionSizes, NT_I8, 1);
+    if (err)
+        return err;
+    
+    memcpy(WaveData(outputWave), reinterpret_cast<void*>(&compiledBinary[0]), nBytes);
     
 	return err;
 }
@@ -315,6 +437,18 @@ static int RegisterIGORCL(void) {
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLRuntimeParams), (void*)ExecuteIGORCL, 0);
 }
 
+static int RegisterIgorCLCompile(void) {
+	const char* cmdTemplate;
+	const char* runtimeNumVarList;
+	const char* runtimeStrVarList;
+    
+	// NOTE: If you change this template, you must change the IgorCLCompileRuntimeParams structure as well.
+	cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DEST=dataFolderAndName:destination string:programSource ";
+	runtimeNumVarList = "";
+	runtimeStrVarList = "";
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);
+}
+
 static int RegisterIGORCLInfo(void) {
 	const char* cmdTemplate;
 	const char* runtimeNumVarList;
@@ -334,6 +468,8 @@ RegisterOperations(void) {
 	// Register IgorCL operation.
 	if (result = RegisterIGORCL())
 		return result;
+    if (result = RegisterIgorCLCompile())
+        return result;
     if (result = RegisterIGORCLInfo())
         return result;
 	

@@ -136,6 +136,57 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         throw int(NOMEM);
 }
 
+std::vector<char> compileSource(const int platformIndex, const int deviceIndex, const std::string programSource) {
+    // initialize the platforms and devices
+    cl_int status;
+    std::vector<cl::Platform> platforms;
+    status = cl::Platform::get(&platforms);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    cl::Platform platform = platforms.at(platformIndex);
+    
+    std::vector<cl::Device> devices;
+    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    cl::Device device = devices.at(deviceIndex);
+    
+    // initialize the context
+    std::vector<cl::Device> deviceAsVector;
+    deviceAsVector.push_back(device);
+    cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // initialize the program and have it build the source code
+    cl::Program program(context, programSource, &status);
+    if (status != CL_SUCCESS)
+        throw int(NOMEM);
+    
+    // build the program
+    status = program.build();
+    if (status != CL_SUCCESS) {
+        std::string buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        for (int i = 0; i < buildLog.size(); ++i) {
+            if (buildLog[i] == '\n')
+                buildLog[i] = '\r';
+        }
+        XOPNotice(buildLog.c_str());
+        throw int(NOMEM);
+    }
+    
+    std::vector<char*> programBinary;
+    std::vector<size_t> programBinarySizes;
+    programBinary = program.getInfo<CL_PROGRAM_BINARIES>();
+    programBinarySizes = program.getInfo<CL_PROGRAM_BINARY_SIZES>();
+    
+    std::vector<char> compiledBinary;
+    compiledBinary.resize(programBinarySizes.at(0));
+    memcpy(reinterpret_cast<void*>(&compiledBinary.at(0)), reinterpret_cast<void*>(programBinary.at(0)), programBinarySizes.at(0));
+    
+    return compiledBinary;
+}
+
 void VectorAdd(waveHndl waveA, waveHndl waveB, waveHndl waveC) {
     int err = 0;
     
