@@ -94,6 +94,10 @@ struct IgorCLCompileRuntimeParams {
 	DataFolderAndName DESTFlag_destination;
 	int DESTFlagParamsSet[1];
     
+	// Parameters for /Z flag group.
+	int ZFlagEncountered;
+	// There are no fields for this group because it has no parameters.
+    
 	// Main parameters.
     
 	// Parameters for simple main group #0.
@@ -340,20 +344,31 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
         return EXPECTED_STRING;
     }
     
+    bool quiet = false;
+    if (p->ZFlagEncountered) {
+        quiet = true;
+	}
+    
     // do the actual compilation
     std::vector<char> compiledBinary;
+    std::string buildLog;
     try {
-        compiledBinary = compileSource(platformIndex, deviceIndex, programSource);
+        compiledBinary = CompileSource(platformIndex, deviceIndex, programSource, buildLog);
     }
     catch (int e) {
         return e;
     }
     catch (IgorCLError& e) {
         int errorCode = e.getErrorCode();
-        char noticeStr[20];
-        sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
-        XOPNotice(noticeStr);
-        return OPENCL_ERROR;
+        SetOperationNumVar("V_Flag", errorCode);
+        SetOperationStrVar("S_BuildLog", buildLog.c_str());
+        if (!quiet) {
+            char noticeStr[20];
+            sprintf(noticeStr, "\rOpenCL error code %d\r", errorCode);
+            XOPNotice(noticeStr);
+            return OPENCL_ERROR;
+        }
+        return 0;
     }
     catch (std::range_error& e) {
         return INDEX_OUT_OF_RANGE;
@@ -373,6 +388,9 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
         return err;
     
     memcpy(WaveData(outputWave), reinterpret_cast<void*>(&compiledBinary[0]), nBytes);
+    
+    SetOperationNumVar("V_Flag", 0);
+    SetOperationStrVar("S_BuildLog", "");
     
 	return err;
 }
@@ -511,9 +529,9 @@ static int RegisterIgorCLCompile(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLCompileRuntimeParams structure as well.
-	cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DEST=dataFolderAndName:destination string:programSource ";
-	runtimeNumVarList = "";
-	runtimeStrVarList = "";
+	cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DEST=dataFolderAndName:destination /Z string:programSource ";
+	runtimeNumVarList = "V_Flag";
+	runtimeStrVarList = "S_BuildLog";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);
 }
 

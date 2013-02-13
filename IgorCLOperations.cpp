@@ -154,7 +154,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         throw IgorCLError(status);
 }
 
-std::vector<char> compileSource(const int platformIndex, const int deviceIndex, const std::string programSource) {
+std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, const std::string programSource, std::string& buildLog) {
     // initialize the platforms and devices
     cl_int status;
     std::vector<cl::Platform> platforms;
@@ -182,14 +182,14 @@ std::vector<char> compileSource(const int platformIndex, const int deviceIndex, 
         throw IgorCLError(status);
     
     // build the program
+    buildLog.clear();
     status = program.build();
     if (status != CL_SUCCESS) {
-        std::string buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+        buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
         for (int i = 0; i < buildLog.size(); ++i) {
             if (buildLog[i] == '\n')
                 buildLog[i] = '\r';
         }
-        XOPNotice(buildLog.c_str());
         throw IgorCLError(status);
     }
     
