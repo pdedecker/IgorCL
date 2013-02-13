@@ -53,5 +53,8 @@
     <ClInclude Include="..\IgorCLUtilities.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\IgorCLConstants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

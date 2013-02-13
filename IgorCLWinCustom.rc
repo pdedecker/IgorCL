@@ -30,6 +30,9 @@ BEGIN
 	"IgorCL\0",
 	waveOp | XOPOp | compilableOp,
 
+	"IgorCLCompile\0",
+	waveOp | XOPOp | compilableOp,
+
 	"IgorCLInfo\0",
 	waveOp | XOPOp | compilableOp,
 
