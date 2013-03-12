@@ -395,7 +395,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
 	return err;
 }
 
-static int ExecuteIGORCLInfo(IGORCLInfoRuntimeParamsPtr p) {
+static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
 	int err = 0;
     cl_int status;
     
@@ -535,16 +535,16 @@ static int RegisterIgorCLCompile(void) {
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);
 }
 
-static int RegisterIGORCLInfo(void) {
+static int RegisterIgorCLInfo(void) {
 	const char* cmdTemplate;
 	const char* runtimeNumVarList;
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IGORCLInfoRuntimeParams structure as well.
-	cmdTemplate = "IGORCLInfo ";
+	cmdTemplate = "IgorCLInfo ";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
-	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLInfoRuntimeParams), (void*)ExecuteIGORCLInfo, 0);
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLInfoRuntimeParams), (void*)ExecuteIgorCLInfo, 0);
 }
 
 static int
@@ -556,7 +556,7 @@ RegisterOperations(void) {
 		return result;
     if (result = RegisterIgorCLCompile())
         return result;
-    if (result = RegisterIGORCLInfo())
+    if (result = RegisterIgorCLInfo())
         return result;
 	
 	// There are no more operations added by this XOP.
