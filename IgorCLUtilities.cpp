@@ -6,6 +6,8 @@
 //
 //
 
+#include <stdexcept>
+
 #include "IgorCLUtilities.h"
 #include "IgorCLConstants.h"
 #include "cl.hpp"
@@ -84,6 +86,20 @@ size_t WaveDataSizeInBytes(waveHndl wave) {
     return WavePoints(wave) * bytesPerPoint;
 }
 
+size_t SharedMemorySizeFromWave(waveHndl wave) {
+    int err = 0;
+    
+    if ((WavePoints(wave) != 1) || (WaveType(wave) & NT_CMPLX))
+        throw std::runtime_error("Size of __shared memory must be specified in a numeric, non-complex wave with a single point");
+    
+    double dMemorySize;
+    err = MDGetDPDataFromNumericWave(wave, &dMemorySize);
+    if (err)
+        throw err;
+    
+    return static_cast<size_t>(dMemorySize);
+}
+
 int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags) {
     int openCLFlags = 0;
     
@@ -95,12 +111,10 @@ int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags) {
         openCLFlags |= CL_MEM_READ_ONLY;
     if (igorCLFlags & IgorCLUseHostPointer)
         openCLFlags |= CL_MEM_USE_HOST_PTR;
-    /*if (igorCLFlags & IgorCLHostWriteOnly)
-        openCLFlags |= CL_MEM_HOST_WRITE_ONLY;
-    if (igorCLFlags & IgorCLHostReadOnly)
-        openCLFlags |= CL_MEM_HOST_READ_ONLY;
-    if (igorCLFlags & IgorCLHostNoAccess)
-        openCLFlags |= CL_MEM_HOST_NO_ACCESS;*/
+    
+    // this function does not bother with IgorCLIsLocalMemory
+    // because there is no corresponding OpenCL flag.
+    // It is known to Igor only.
     
     return openCLFlags;
 }

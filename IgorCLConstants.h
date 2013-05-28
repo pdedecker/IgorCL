@@ -15,9 +15,7 @@ const int IgorCLReadWrite = 1 << 0;
 const int IgorCLWriteOnly = 1 << 1;
 const int IgorCLReadOnly = 1 << 2;
 const int IgorCLUseHostPointer = 1 << 3;
-const int IgorCLHostWriteOnly = 1 << 4;
-const int IgorCLHostReadOnly = 1 << 5;
-const int IgorCLHostNoAccess = 1 << 6;
+const int IgorCLIsLocalMemory = 1 << 4;
 
 class IgorCLError {
 public:

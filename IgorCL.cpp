@@ -265,9 +265,13 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
 		for(int i=0; i<12; i++) {
 			if (paramsSet[i] == 0)
 				break;		// No more parameters.
+            // No NULL waves allowed.
             if (p->dataWaves[i] == NULL)
                 return NULL_WAVE_OP;
-            
+            // No non-numeric waves allowed.
+            int waveType = WaveType(p->dataWaves[i]);
+            if ((waveType & TEXT_WAVE_TYPE) || (waveType & WAVE_TYPE) || (waveType & DATAFOLDER_TYPE))
+                return EXPECTED_NUMERIC_WAVE;
             waves.push_back(p->dataWaves[i]);
         }
     } else {
@@ -298,6 +302,10 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     }
     catch (std::range_error& e) {
         return INDEX_OUT_OF_RANGE;
+    }
+    catch (std::runtime_error& e) {
+        XOPNotice(e.what());
+        return GENERAL_BAD_VIBS;
     }
     catch (...) {
         return GENERAL_BAD_VIBS;

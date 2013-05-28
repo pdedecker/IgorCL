@@ -31,8 +31,15 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<void*> dataPointers; std::vector<size_t> dataSizes;
     dataPointers.reserve(nWaves); dataSizes.reserve(nWaves);
     for (size_t i = 0; i < nWaves; i+=1) {
-        dataPointers.push_back(reinterpret_cast<void*>(WaveData(waves.at(i))));
-        dataSizes.push_back(WaveDataSizeInBytes(waves.at(i)));
+        // special case: if we're using __shared memory then the corresponding wave must
+        // consist of a single point, the size of the memory.
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory)) {
+            dataPointers.push_back(NULL);
+            dataSizes.push_back(SharedMemorySizeFromWave(waves.at(i)));
+        } else {
+            dataPointers.push_back(reinterpret_cast<void*>(WaveData(waves.at(i))));
+            dataSizes.push_back(WaveDataSizeInBytes(waves.at(i)));
+        }
     }
     
     // convert IgorCL memflags to underlying OpenCL flags
@@ -106,21 +113,28 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Buffer> buffers;
     buffers.reserve(nWaves);
     for (size_t i = 0; i < nWaves; i+=1) {
-        int memFlags = 0;
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory)) {
+            buffers.push_back(cl::Buffer());
+            continue;
+        }
+        
+        int flags = 0;
         void* hostPointer = NULL;
-        if (openCLMemFlags.size() > 0)
-            memFlags = openCLMemFlags.at(i);
-        if (memFlags & CL_MEM_USE_HOST_PTR)
+        if (openCLMemFlags.size() > i)
+            flags = openCLMemFlags.at(i);
+        if (flags & CL_MEM_USE_HOST_PTR)
             hostPointer = dataPointers.at(i);
-        cl::Buffer buffer(context, memFlags, dataSizes.at(i), hostPointer, &status);
+        cl::Buffer buffer(context, flags, dataSizes.at(i), hostPointer, &status);
         if (status != CL_SUCCESS)
             throw IgorCLError(status);
         buffers.push_back(buffer);
     }
     
-    // and copy all of the data to the device, unless we want to use the host memory
+    // and copy all of the data to the device, unless we want to use the host memory, or we're using shared memory
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((openCLMemFlags.size() > 0) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
+            continue;
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
@@ -129,7 +143,11 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     
     // set arguments for the kernel
     for (size_t i = 0; i < nWaves; i+=1) {
-        status = kernel.setArg(i, buffers.at(i));
+        if ((memFlags.size() > i) && !(memFlags.at(i) & IgorCLIsLocalMemory)) {
+            status = kernel.setArg(i, buffers.at(i));
+        } else {
+            status = kernel.setArg(i, dataSizes.at(i), NULL);
+        }
         if (status != CL_SUCCESS)
             throw IgorCLError(status);
     }
@@ -139,9 +157,11 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
     
-    // copy arguments back into the waves, unless we have used host memory
+    // copy arguments back into the waves, unless we have used host memory or shared memory
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((openCLMemFlags.size() > 0) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
+            continue;
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
