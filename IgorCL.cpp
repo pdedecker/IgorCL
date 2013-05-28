@@ -427,6 +427,12 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
         err = MDMakeWave(&platformsWave, "M_OpenCLPlatforms", NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
         if (err)
             return err;
+        err = MDSetDimensionLabel(platformsWave, 0, 0, "Vendor");
+        if (err)
+            return err;
+        err = MDSetDimensionLabel(platformsWave, 0, 1, "Version");
+        if (err)
+            return err;
         
         cl_bool clBool;
         cl_ulong clUlong;
@@ -452,6 +458,26 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             err = MDMakeWave(&devicesWave, deviceWaveName, NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
             if (err)
                 return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 0, "Type");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 1, "Name");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 2, "Version");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 3, "Availability");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 4, "Global Mem Size");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 5, "Max Mem Alloc");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 6, "Local Mem Size");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 7, "Max Compute Units");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 8, "Max Work Item Sizes");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 9, "Supported Extensions");
+            if (err) return err;
             
             for (int j = 0; j < devices.size(); ++j) {
                 indices[1] = j;
