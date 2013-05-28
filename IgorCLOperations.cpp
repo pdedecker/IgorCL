@@ -143,10 +143,10 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     
     // set arguments for the kernel
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((memFlags.size() > i) && !(memFlags.at(i) & IgorCLIsLocalMemory)) {
-            status = kernel.setArg(i, buffers.at(i));
-        } else {
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory)) {
             status = kernel.setArg(i, dataSizes.at(i), NULL);
+        } else {
+            status = kernel.setArg(i, buffers.at(i));
         }
         if (status != CL_SUCCESS)
             throw IgorCLError(status);

@@ -371,7 +371,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
         SetOperationNumVar("V_Flag", errorCode);
         SetOperationStrVar("S_BuildLog", buildLog.c_str());
         if (!quiet) {
-            char noticeStr[20];
+            char noticeStr[100];
             sprintf(noticeStr, "\rOpenCL error code %d\r", errorCode);
             XOPNotice(noticeStr);
             return OPENCL_ERROR;
