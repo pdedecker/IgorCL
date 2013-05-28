@@ -100,7 +100,44 @@ size_t SharedMemorySizeFromWave(waveHndl wave) {
     return static_cast<size_t>(dMemorySize);
 }
 
-int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags) {
+int GetFirstDeviceOfType(const int platformIndex, const std::string& deviceTypeStr) {
+    // rework deviceTypeStr to an OpenCL constant
+    int deviceType;
+    if (deviceTypeStr == "CPU") {
+        deviceType = CL_DEVICE_TYPE_CPU;
+    } else if (deviceTypeStr == "GPU") {
+        deviceType = CL_DEVICE_TYPE_GPU;
+    } else if (deviceTypeStr == "Accelerator") {
+        deviceType = CL_DEVICE_TYPE_ACCELERATOR;
+    } else {
+        throw std::runtime_error("Unknown device type string");
+    }
+    
+    // initialize the platform
+    cl_int status;
+    std::vector<cl::Platform> platforms;
+    status = cl::Platform::get(&platforms);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    if (platforms.size() <= platformIndex)
+        throw std::runtime_error("Invalid OpenCL platform index");
+    cl::Platform platform = platforms.at(platformIndex);
+    
+    std::vector<cl::Device> devices;
+    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    for (int i = 0; i < devices.size(); ++i) {
+        cl_device_type thisDeviceType = devices.at(i).getInfo<CL_DEVICE_TYPE>();
+        if (thisDeviceType == deviceType)
+            return i;
+    }
+    
+    // still here? No matching device.
+    throw std::runtime_error("No device of requested type available");
+}
+
+int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
     int openCLFlags = 0;
     
     if (igorCLFlags & IgorCLReadWrite)

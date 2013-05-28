@@ -25,6 +25,11 @@ struct IgorCLRuntimeParams {
 	double DEVFlag_device;
 	int DEVFlagParamsSet[1];
     
+	// Parameters for /DTYP flag group.
+	int DTYPFlagEncountered;
+	Handle DTYPFlag_deviceType;
+	int DTYPFlagParamsSet[1];
+    
 	// Parameters for /SRCT flag group.
 	int SRCTFlagEncountered;
 	Handle SRCTFlag_sourceText;
@@ -89,6 +94,11 @@ struct IgorCLCompileRuntimeParams {
 	double DEVFlag_device;
 	int DEVFlagParamsSet[1];
     
+	// Parameters for /DTYP flag group.
+	int DTYPFlagEncountered;
+	Handle DTYPFlag_deviceType;
+	int DTYPFlagParamsSet[1];
+    
 	// Parameters for /DEST flag group.
 	int DESTFlagEncountered;
 	DataFolderAndName DESTFlag_destination;
@@ -96,7 +106,8 @@ struct IgorCLCompileRuntimeParams {
     
 	// Parameters for /Z flag group.
 	int ZFlagEncountered;
-	// There are no fields for this group because it has no parameters.
+	double ZFlag_quiet;
+	int ZFlagParamsSet[1];
     
 	// Main parameters.
     
@@ -131,159 +142,172 @@ typedef struct IGORCLInfoRuntimeParams* IGORCLInfoRuntimeParamsPtr;
 static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
 	int err = 0;
     
-    // Flag parameters.
-    
-    int platformIndex = 0;
-	if (p->PLTMFlagEncountered) {
-		// Parameter: p->PLTMFlag_platform
-        if (p->PLTMFlag_platform < 0)
-            return EXPECT_POS_NUM;
-        platformIndex = p->PLTMFlag_platform + 0.5;
-	}
-    
-    int deviceIndex = 0;
-	if (p->DEVFlagEncountered) {
-		// Parameter: p->DEVFlag_device
-        if (p->DEVFlag_device < 0)
-            return EXPECT_POS_NUM;
-        deviceIndex = p->DEVFlag_device + 0.5;
-	}
-    
-    bool sourceProvidedAsText = false;
-    std::string textSource;
-    if (p->SRCTFlagEncountered) {
-		// Parameter: p->SRCTFlag_sourceText (test for NULL handle before using)
-        if (p->SRCTFlag_sourceText == NULL)
-            return USING_NULL_STRVAR;
-        sourceProvidedAsText = true;
-        textSource = GetStdStringFromHandle(p->SRCTFlag_sourceText);
-	}
-    
-    waveHndl programBinaryWave = NULL;
-    size_t nBytesInProgramBinary;
-    std::vector<char> programBinary;
-	if (p->SRCBFlagEncountered) {
-		// Parameter: p->SRCBFlag_sourceBinary (test for NULL handle before using)
-        if (p->SRCBFlag_sourceBinary == NULL)
-            return NULL_WAVE_OP;
-        if (sourceProvidedAsText)
-            return GENERAL_BAD_VIBS;    // program needs to be provided as text OR binary
-        
-        programBinaryWave = p->SRCBFlag_sourceBinary;
-        // require a wave containing bytes
-        if (WaveType(programBinaryWave) != NT_I8)
-            return NT_INCOMPATIBLE;
-        // require that the wave is 1D
-        int numDimensions;
-        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
-        err = MDGetWaveDimensions(programBinaryWave, &numDimensions, dimensionSizes);
-        if (err)
-            return err;
-        if (numDimensions != 1)
-            return INCOMPATIBLE_DIMENSIONING;
-        nBytesInProgramBinary = dimensionSizes[0];
-        programBinary.resize(nBytesInProgramBinary);
-        memcpy(reinterpret_cast<void*>(&programBinary[0]), WaveData(programBinaryWave), nBytesInProgramBinary);
-	} else if (!sourceProvidedAsText) {
-        return EXPECTED_STRING;         // program needs to be provided as text OR binary
-    }
-    
-    std::string kernelName;
-	if (p->KERNFlagEncountered) {
-		// Parameter: p->KERNFlag_kernelName (test for NULL handle before using)
-        if (p->KERNFlag_kernelName == NULL)
-            return USING_NULL_STRVAR;
-        kernelName = GetStdStringFromHandle(p->KERNFlag_kernelName);
-	} else {
-        return EXPECTED_STRING;
-    }
-    
-    cl::NDRange globalRange;
-	if (p->RNGFlagEncountered) {
-		// Parameter: p->RNGFlag_globalSize0
-		// Parameter: p->RNGFlag_globalSize1
-		// Parameter: p->RNGFlag_globalSize2
-        if ((p->RNGFlag_globalSize0 < 0) || (p->RNGFlag_globalSize1 < 0) || (p->RNGFlag_globalSize2 < 0))
-            return EXPECT_POS_NUM;
-        size_t gRange0 = p->RNGFlag_globalSize0 + 0.5;
-        size_t gRange1 = p->RNGFlag_globalSize1 + 0.5;
-        size_t gRange2 = p->RNGFlag_globalSize2 + 0.5;
-        globalRange = cl::NDRange(gRange0, gRange1, gRange2);
-	} else {
-        return GENERAL_BAD_VIBS;
-    }
-    
-    cl::NDRange workgroupSize;
-    if (p->WGRPFlagEncountered) {
-		// Parameter: p->WGRPFlag_wgSize0
-		// Parameter: p->WGRPFlag_wgSize1
-		// Parameter: p->WGRPFlag_wgSize2
-        if ((p->WGRPFlag_wgSize0 < 0) || (p->WGRPFlag_wgSize1 < 0) || (p->WGRPFlag_wgSize2 < 0))
-            return EXPECT_POS_NUM;
-        size_t wRange0 = p->WGRPFlag_wgSize0 + 0.5;
-        size_t wRange1 = p->WGRPFlag_wgSize1 + 0.5;
-        size_t wRange2 = p->WGRPFlag_wgSize2 + 0.5;
-        workgroupSize = cl::NDRange(wRange0, wRange1, wRange2);
-	} else {
-        workgroupSize = cl::NullRange;
-    }
-    
-    std::vector<int> memFlags;
-    if (p->MFLGFlagEncountered) {
-		// Parameter: p->MFLGFlag_memoryFlagsWave (test for NULL handle before using)
-        if (p->MFLGFlag_memoryFlagsWave == NULL)
-            return NULL_WAVE_OP;
-        if (WaveType(p->MFLGFlag_memoryFlagsWave) & NT_CMPLX)
-            return COMPLEX_TO_REAL_LOSS;
-        
-        waveHndl memFlagsWave = p->MFLGFlag_memoryFlagsWave;
-        // require that the wave is 1D
-        int numDimensions;
-        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
-        err = MDGetWaveDimensions(memFlagsWave, &numDimensions, dimensionSizes);
-        if (err)
-            return err;
-        if (numDimensions != 1)
-            return INCOMPATIBLE_DIMENSIONING;
-        
-        // copy all flag values into memFlags
-        IndexInt indices[MAX_DIMENSIONS];
-        double value[2];
-        for (size_t i = 0; i < dimensionSizes[0]; i+=1) {
-            indices[0] = i;
-            err = MDGetNumericWavePointValue(memFlagsWave, indices, value);
-            memFlags.push_back(value[0] + 0.5);
-        }
-	}
-    
-	// Main parameters.
-    std::vector<waveHndl> waves;
-    int nDataWaves = 0;
-	if (p->dataWavesEncountered) {
-		// Array-style optional parameter: p->dataWaves
-		int* paramsSet = &p->dataWavesParamsSet[0];
-		for(int i=0; i<12; i++) {
-			if (paramsSet[i] == 0)
-				break;		// No more parameters.
-            // No NULL waves allowed.
-            if (p->dataWaves[i] == NULL)
-                return NULL_WAVE_OP;
-            // No non-numeric waves allowed.
-            int waveType = WaveType(p->dataWaves[i]);
-            if ((waveType & TEXT_WAVE_TYPE) || (waveType & WAVE_TYPE) || (waveType & DATAFOLDER_TYPE))
-                return EXPECTED_NUMERIC_WAVE;
-            waves.push_back(p->dataWaves[i]);
-        }
-    } else {
-        return NOWAV;
-    }
-    
-    // if memory flags have been provided then require that there are as many flags as there are waves
-    if ((memFlags.size() > 0) && (memFlags.size() != waves.size())) {
-        return GENERAL_BAD_VIBS;
-    }
-    
     try {
+        // Flag parameters.
+        
+        int platformIndex = 0;
+        if (p->PLTMFlagEncountered) {
+            // Parameter: p->PLTMFlag_platform
+            if (p->PLTMFlag_platform < 0)
+                return EXPECT_POS_NUM;
+            platformIndex = p->PLTMFlag_platform + 0.5;
+        }
+        
+        // only one of /DEV or /DTYP flags may be specified
+        if (p->DEVFlagEncountered && p->DTYPFlagEncountered) {
+            XOPNotice("Only one of the /DEV or /DTYP flags may be specified\r");
+            return SYNERR;
+        }
+        int deviceIndex = 0;
+        if (p->DEVFlagEncountered) {
+            // Parameter: p->DEVFlag_device
+            if (p->DEVFlag_device < 0)
+                return EXPECT_POS_NUM;
+            deviceIndex = p->DEVFlag_device + 0.5;
+        }
+        
+        if (p->DTYPFlagEncountered) {
+            // Parameter: p->DTYPFlag_deviceType (test for NULL handle before using)
+            if (p->DTYPFlag_deviceType == NULL)
+                return USING_NULL_STRVAR;
+            std::string deviceTypeStr = GetStdStringFromHandle(p->DTYPFlag_deviceType);
+            deviceIndex = GetFirstDeviceOfType(platformIndex, deviceTypeStr);
+        }
+        
+        bool sourceProvidedAsText = false;
+        std::string textSource;
+        if (p->SRCTFlagEncountered) {
+            // Parameter: p->SRCTFlag_sourceText (test for NULL handle before using)
+            if (p->SRCTFlag_sourceText == NULL)
+                return USING_NULL_STRVAR;
+            sourceProvidedAsText = true;
+            textSource = GetStdStringFromHandle(p->SRCTFlag_sourceText);
+        }
+        
+        waveHndl programBinaryWave = NULL;
+        size_t nBytesInProgramBinary;
+        std::vector<char> programBinary;
+        if (p->SRCBFlagEncountered) {
+            // Parameter: p->SRCBFlag_sourceBinary (test for NULL handle before using)
+            if (p->SRCBFlag_sourceBinary == NULL)
+                return NULL_WAVE_OP;
+            if (sourceProvidedAsText)
+                return GENERAL_BAD_VIBS;    // program needs to be provided as text OR binary
+            
+            programBinaryWave = p->SRCBFlag_sourceBinary;
+            // require a wave containing bytes
+            if (WaveType(programBinaryWave) != NT_I8)
+                return NT_INCOMPATIBLE;
+            // require that the wave is 1D
+            int numDimensions;
+            CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+            err = MDGetWaveDimensions(programBinaryWave, &numDimensions, dimensionSizes);
+            if (err)
+                return err;
+            if (numDimensions != 1)
+                return INCOMPATIBLE_DIMENSIONING;
+            nBytesInProgramBinary = dimensionSizes[0];
+            programBinary.resize(nBytesInProgramBinary);
+            memcpy(reinterpret_cast<void*>(&programBinary[0]), WaveData(programBinaryWave), nBytesInProgramBinary);
+        } else if (!sourceProvidedAsText) {
+            return EXPECTED_STRING;         // program needs to be provided as text OR binary
+        }
+        
+        std::string kernelName;
+        if (p->KERNFlagEncountered) {
+            // Parameter: p->KERNFlag_kernelName (test for NULL handle before using)
+            if (p->KERNFlag_kernelName == NULL)
+                return USING_NULL_STRVAR;
+            kernelName = GetStdStringFromHandle(p->KERNFlag_kernelName);
+        } else {
+            return EXPECTED_STRING;
+        }
+        
+        cl::NDRange globalRange;
+        if (p->RNGFlagEncountered) {
+            // Parameter: p->RNGFlag_globalSize0
+            // Parameter: p->RNGFlag_globalSize1
+            // Parameter: p->RNGFlag_globalSize2
+            if ((p->RNGFlag_globalSize0 < 0) || (p->RNGFlag_globalSize1 < 0) || (p->RNGFlag_globalSize2 < 0))
+                return EXPECT_POS_NUM;
+            size_t gRange0 = p->RNGFlag_globalSize0 + 0.5;
+            size_t gRange1 = p->RNGFlag_globalSize1 + 0.5;
+            size_t gRange2 = p->RNGFlag_globalSize2 + 0.5;
+            globalRange = cl::NDRange(gRange0, gRange1, gRange2);
+        } else {
+            return GENERAL_BAD_VIBS;
+        }
+        
+        cl::NDRange workgroupSize;
+        if (p->WGRPFlagEncountered) {
+            // Parameter: p->WGRPFlag_wgSize0
+            // Parameter: p->WGRPFlag_wgSize1
+            // Parameter: p->WGRPFlag_wgSize2
+            if ((p->WGRPFlag_wgSize0 < 0) || (p->WGRPFlag_wgSize1 < 0) || (p->WGRPFlag_wgSize2 < 0))
+                return EXPECT_POS_NUM;
+            size_t wRange0 = p->WGRPFlag_wgSize0 + 0.5;
+            size_t wRange1 = p->WGRPFlag_wgSize1 + 0.5;
+            size_t wRange2 = p->WGRPFlag_wgSize2 + 0.5;
+            workgroupSize = cl::NDRange(wRange0, wRange1, wRange2);
+        } else {
+            workgroupSize = cl::NullRange;
+        }
+        
+        std::vector<int> memFlags;
+        if (p->MFLGFlagEncountered) {
+            // Parameter: p->MFLGFlag_memoryFlagsWave (test for NULL handle before using)
+            if (p->MFLGFlag_memoryFlagsWave == NULL)
+                return NULL_WAVE_OP;
+            if (WaveType(p->MFLGFlag_memoryFlagsWave) & NT_CMPLX)
+                return COMPLEX_TO_REAL_LOSS;
+            
+            waveHndl memFlagsWave = p->MFLGFlag_memoryFlagsWave;
+            // require that the wave is 1D
+            int numDimensions;
+            CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+            err = MDGetWaveDimensions(memFlagsWave, &numDimensions, dimensionSizes);
+            if (err)
+                return err;
+            if (numDimensions != 1)
+                return INCOMPATIBLE_DIMENSIONING;
+            
+            // copy all flag values into memFlags
+            IndexInt indices[MAX_DIMENSIONS];
+            double value[2];
+            for (size_t i = 0; i < dimensionSizes[0]; i+=1) {
+                indices[0] = i;
+                err = MDGetNumericWavePointValue(memFlagsWave, indices, value);
+                memFlags.push_back(value[0] + 0.5);
+            }
+        }
+        
+        // Main parameters.
+        std::vector<waveHndl> waves;
+        int nDataWaves = 0;
+        if (p->dataWavesEncountered) {
+            // Array-style optional parameter: p->dataWaves
+            int* paramsSet = &p->dataWavesParamsSet[0];
+            for(int i=0; i<12; i++) {
+                if (paramsSet[i] == 0)
+                    break;		// No more parameters.
+                // No NULL waves allowed.
+                if (p->dataWaves[i] == NULL)
+                    return NULL_WAVE_OP;
+                // No non-numeric waves allowed.
+                int waveType = WaveType(p->dataWaves[i]);
+                if ((waveType & TEXT_WAVE_TYPE) || (waveType & WAVE_TYPE) || (waveType & DATAFOLDER_TYPE))
+                    return EXPECTED_NUMERIC_WAVE;
+                waves.push_back(p->dataWaves[i]);
+            }
+        } else {
+            return NOWAV;
+        }
+        
+        // if memory flags have been provided then require that there are as many flags as there are waves
+        if ((memFlags.size() > 0) && (memFlags.size() != waves.size())) {
+            return GENERAL_BAD_VIBS;
+        }
+        
         if (sourceProvidedAsText) {
             DoOpenCLCalculation(platformIndex, deviceIndex, globalRange, workgroupSize, kernelName, waves, memFlags, textSource);
         } else {
@@ -316,52 +340,81 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
 
 static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
 	int err = 0;
-    
-	// Flag parameters.
-    
-    int platformIndex = 0;
-	if (p->PLTMFlagEncountered) {
-		// Parameter: p->PLTMFlag_platform
-        platformIndex = p->PLTMFlag_platform + 0.5;
-	}
-    
-    int deviceIndex = 0;
-	if (p->DEVFlagEncountered) {
-		// Parameter: p->DEVFlag_device
-        deviceIndex = p->DEVFlag_device + 0.5;
-	}
-    
-    DataFolderAndName destination;
-	if (p->DESTFlagEncountered) {
-		// Parameter: p->DESTFlag_destination
-        destination = p->DESTFlag_destination;
-	} else {
-        destination.dfH = NULL;
-        strcpy(destination.name, "W_CompiledBinary");
-    }
-    
-	// Main parameters.
-    
-    std::string programSource;
-	if (p->programSourceEncountered) {
-		// Parameter: p->programSource (test for NULL handle before using)
-        if (p->programSource == NULL)
-            return EXPECTED_STRING;
-        programSource = GetStdStringFromHandle(p->programSource);
-	} else {
-        return EXPECTED_STRING;
-    }
-    
     bool quiet = false;
-    if (p->ZFlagEncountered) {
-        quiet = true;
-	}
-    
-    // do the actual compilation
-    std::vector<char> compiledBinary;
     std::string buildLog;
+    
     try {
+        // Flag parameters.
+        
+        int platformIndex = 0;
+        if (p->PLTMFlagEncountered) {
+            // Parameter: p->PLTMFlag_platform
+            platformIndex = p->PLTMFlag_platform + 0.5;
+        }
+        
+        // only one of /DEV or /DTYP flags may be specified
+        if (p->DEVFlagEncountered && p->DTYPFlagEncountered) {
+            XOPNotice("Only one of the /DEV or /DTYP flags may be specified\r");
+            return SYNERR;
+        }
+        
+        
+        int deviceIndex = 0;
+        if (p->DEVFlagEncountered) {
+            // Parameter: p->DEVFlag_device
+            deviceIndex = p->DEVFlag_device + 0.5;
+        }
+        
+        if (p->DTYPFlagEncountered) {
+            // Parameter: p->DTYPFlag_deviceType (test for NULL handle before using)
+            if (p->DTYPFlag_deviceType == NULL)
+                return USING_NULL_STRVAR;
+            std::string deviceTypeStr = GetStdStringFromHandle(p->DTYPFlag_deviceType);
+            deviceIndex = GetFirstDeviceOfType(platformIndex, deviceTypeStr);
+        }
+        
+        DataFolderAndName destination;
+        if (p->DESTFlagEncountered) {
+            // Parameter: p->DESTFlag_destination
+            destination = p->DESTFlag_destination;
+        } else {
+            destination.dfH = NULL;
+            strcpy(destination.name, "W_CompiledBinary");
+        }
+        
+        if (p->ZFlagEncountered) {
+            quiet = true;
+            if (p->ZFlagParamsSet[0] != 0)
+                quiet = p->ZFlag_quiet != 0.0;
+        }
+        
+        // Main parameters.
+        
+        std::string programSource;
+        if (p->programSourceEncountered) {
+            // Parameter: p->programSource (test for NULL handle before using)
+            if (p->programSource == NULL)
+                return EXPECTED_STRING;
+            programSource = GetStdStringFromHandle(p->programSource);
+        } else {
+            return EXPECTED_STRING;
+        }
+        
+        // do the actual compilation
+        std::vector<char> compiledBinary;
         compiledBinary = CompileSource(platformIndex, deviceIndex, programSource, buildLog);
+        
+        // copy the compiled binary back out to an Igor wave
+        size_t nBytes = compiledBinary.size();
+        CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+        dimensionSizes[0] = nBytes;
+        dimensionSizes[1] = 0;
+        waveHndl outputWave;
+        err = MDMakeWave(&outputWave, destination.name, destination.dfH, dimensionSizes, NT_I8, 1);
+        if (err)
+            return err;
+        
+        memcpy(WaveData(outputWave), reinterpret_cast<void*>(&compiledBinary[0]), nBytes);
     }
     catch (int e) {
         return e;
@@ -384,18 +437,6 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
     catch (...) {
         return GENERAL_BAD_VIBS;
     }
-    
-    // copy the compiled binary back out to an Igor wave
-    size_t nBytes = compiledBinary.size();
-    CountInt dimensionSizes[MAX_DIMENSIONS + 1];
-    dimensionSizes[0] = nBytes;
-    dimensionSizes[1] = 0;
-    waveHndl outputWave;
-    err = MDMakeWave(&outputWave, destination.name, destination.dfH, dimensionSizes, NT_I8, 1);
-    if (err)
-        return err;
-    
-    memcpy(WaveData(outputWave), reinterpret_cast<void*>(&compiledBinary[0]), nBytes);
     
     SetOperationNumVar("V_Flag", 0);
     SetOperationStrVar("S_BuildLog", "");
@@ -551,7 +592,7 @@ static int RegisterIgorCL(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLRuntimeParams structure as well.
-	cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave wave[12]:dataWaves";
+    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave wave[12]:dataWaves";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
@@ -563,7 +604,7 @@ static int RegisterIgorCLCompile(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLCompileRuntimeParams structure as well.
-	cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DEST=dataFolderAndName:destination /Z string:programSource ";
+    cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /DEST=dataFolderAndName:destination /Z=number:quiet string:programSource ";
 	runtimeNumVarList = "V_Flag";
 	runtimeStrVarList = "S_BuildLog";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);

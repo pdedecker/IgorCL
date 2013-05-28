@@ -15,15 +15,14 @@
 #include "XOPStandardHeaders.h"
 
 void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* indices);
-
 std::string GetStdStringFromHandle(const Handle handle);
-
 Handle PutStdStringInHandle(const std::string theString);
 
 size_t WaveDataSizeInBytes(waveHndl wave);
 size_t SharedMemorySizeFromWave(waveHndl wave);
 
-int ConvertIgorCLFlagsToOpenCLFlags(int igorCLFlags);
+int GetFirstDeviceOfType(const int platformIndex, const std::string& deviceTypeStr);
+int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags);
 
 
 #endif /* defined(__IgorCL__IgorCLUtilities__) */
