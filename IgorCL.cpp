@@ -64,6 +64,11 @@ struct IgorCLRuntimeParams {
 	waveHndl MFLGFlag_memoryFlagsWave;
 	int MFLGFlagParamsSet[1];
     
+	// Parameters for /Z flag group.
+	int ZFlagEncountered;
+	double ZFlag_quiet;
+	int ZFlagParamsSet[1];
+    
 	// Main parameters.
     
 	// Parameters for simple main group #0.
@@ -141,6 +146,7 @@ typedef struct IGORCLInfoRuntimeParams* IGORCLInfoRuntimeParamsPtr;
 
 static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
 	int err = 0;
+    bool quiet = false;
     
     try {
         // Flag parameters.
@@ -277,8 +283,17 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
             for (size_t i = 0; i < dimensionSizes[0]; i+=1) {
                 indices[0] = i;
                 err = MDGetNumericWavePointValue(memFlagsWave, indices, value);
+                if (value[0] < 0.0)
+                    return EXPECT_POS_NUM;
                 memFlags.push_back(value[0] + 0.5);
             }
+        }
+        
+        if (p->ZFlagEncountered) {
+            // Parameter: p->ZFlag_quiet
+            quiet = true;
+            if (p->ZFlagParamsSet[0] != 0)
+                quiet = (p->ZFlag_quiet != 0.0);
         }
         
         // Main parameters.
@@ -322,7 +337,12 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
         char noticeStr[20];
         sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
         XOPNotice(noticeStr);
-        return OPENCL_ERROR;
+        SetOperationNumVar("V_Flag", errorCode);
+        if (quiet) {
+            return 0;
+        } else {
+            return OPENCL_ERROR;
+        }
     }
     catch (std::range_error& e) {
         return INDEX_OUT_OF_RANGE;
@@ -334,6 +354,8 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     catch (...) {
         return GENERAL_BAD_VIBS;
     }
+    
+    SetOperationNumVar("V_Flag", err);
     
 	return err;
 }
@@ -385,7 +407,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
         if (p->ZFlagEncountered) {
             quiet = true;
             if (p->ZFlagParamsSet[0] != 0)
-                quiet = p->ZFlag_quiet != 0.0;
+                quiet = (p->ZFlag_quiet != 0.0);
         }
         
         // Main parameters.
@@ -438,7 +460,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
         return GENERAL_BAD_VIBS;
     }
     
-    SetOperationNumVar("V_Flag", 0);
+    SetOperationNumVar("V_Flag", err);
     SetOperationStrVar("S_BuildLog", "");
     
 	return err;
@@ -592,8 +614,8 @@ static int RegisterIgorCL(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLRuntimeParams structure as well.
-    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave wave[12]:dataWaves";
-	runtimeNumVarList = "";
+    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z=number:quiet wave[12]:dataWaves";
+    runtimeNumVarList = "V_Flag;";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
 }
