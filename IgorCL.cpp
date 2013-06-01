@@ -241,7 +241,8 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
             size_t gRange2 = p->RNGFlag_globalSize2 + 0.5;
             globalRange = cl::NDRange(gRange0, gRange1, gRange2);
         } else {
-            return GENERAL_BAD_VIBS;
+            XOPNotice("A range must be specified (/RNG flag)\r");
+            return SYNERR;
         }
         
         cl::NDRange workgroupSize;
@@ -614,7 +615,7 @@ static int RegisterIgorCL(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLRuntimeParams structure as well.
-    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z=number:quiet wave[12]:dataWaves";
+    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z[=number:quiet] wave[12]:dataWaves";
     runtimeNumVarList = "V_Flag;";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
@@ -626,8 +627,8 @@ static int RegisterIgorCLCompile(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLCompileRuntimeParams structure as well.
-    cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /DEST=dataFolderAndName:destination /Z=number:quiet string:programSource ";
-	runtimeNumVarList = "V_Flag";
+    cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /DEST=dataFolderAndName:destination /Z[=number:quiet] string:programSource ";
+    runtimeNumVarList = "V_Flag";
 	runtimeStrVarList = "S_BuildLog";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);
 }
