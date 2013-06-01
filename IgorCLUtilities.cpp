@@ -143,7 +143,7 @@ int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
     if (igorCLFlags & IgorCLReadWrite)
         openCLFlags |= CL_MEM_READ_WRITE;
     if (igorCLFlags & IgorCLWriteOnly)
-        openCLFlags |= CL_MEM_READ_ONLY;
+        openCLFlags |= CL_MEM_WRITE_ONLY;
     if (igorCLFlags & IgorCLReadOnly)
         openCLFlags |= CL_MEM_READ_ONLY;
     if (igorCLFlags & IgorCLUseHostPointer)

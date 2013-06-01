@@ -130,11 +130,14 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         buffers.push_back(buffer);
     }
     
-    // and copy all of the data to the device, unless we want to use the host memory, or we're using shared memory
+    // and copy all of the data to the device, unless we want to use the host memory, we're using shared memory,
+    // or this memory is write-only.
     for (size_t i = 0; i < nWaves; i+=1) {
         if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
+            continue;
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_WRITE_ONLY))
             continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
@@ -157,11 +160,14 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
     
-    // copy arguments back into the waves, unless we have used host memory or shared memory
+    // copy arguments back into the waves, unless we have used host memory, used shared memory,
+    // or this memory is read-only.
     for (size_t i = 0; i < nWaves; i+=1) {
         if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
+            continue;
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_READ_ONLY))
             continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
