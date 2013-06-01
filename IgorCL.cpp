@@ -502,6 +502,7 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
         cl_ulong clUlong;
         cl_uint clUint;
         std::vector<size_t> sizeTVector;
+        size_t sizeTVar;
         // platform information
         for (int i = 0; i < platforms.size(); ++i) {
             indices[1] = i;
@@ -516,7 +517,7 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             
             char deviceWaveName[50];
             sprintf(deviceWaveName, "M_OpenCLDevices%d", i);
-            dimensionSizes[0] = 10;
+            dimensionSizes[0] = 19;
             dimensionSizes[1] = devices.size();
             dimensionSizes[2] = 0;
             err = MDMakeWave(&devicesWave, deviceWaveName, NULL, dimensionSizes, TEXT_WAVE_TYPE, 1);
@@ -536,11 +537,29 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
             if (err) return err;
             err = MDSetDimensionLabel(devicesWave, 0, 6, "Local Mem Size");
             if (err) return err;
-            err = MDSetDimensionLabel(devicesWave, 0, 7, "Max Compute Units");
+            err = MDSetDimensionLabel(devicesWave, 0, 7, "Max Constant Buffer Size");
             if (err) return err;
-            err = MDSetDimensionLabel(devicesWave, 0, 8, "Max Work Item Sizes");
+            err = MDSetDimensionLabel(devicesWave, 0, 8, "Max Compute Units");
             if (err) return err;
-            err = MDSetDimensionLabel(devicesWave, 0, 9, "Supported Extensions");
+            err = MDSetDimensionLabel(devicesWave, 0, 9, "Max Work Item Sizes");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 10, "Max Work Group Size");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 11, "Preferred Vector Width Char");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 12, "Preferred Vector Width Short");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 13, "Preferred Vector Width Int");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 14, "Preferred Vector Width Long");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 15, "Preferred Vector Width Float");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 16, "Preferred Vector Width Double");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 17, "Preferred Vector Width Half");
+            if (err) return err;
+            err = MDSetDimensionLabel(devicesWave, 0, 18, "Supported Extensions");
             if (err) return err;
             
             for (int j = 0; j < devices.size(); ++j) {
@@ -587,16 +606,61 @@ static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
                 indices[0] = 7;
+                clUlong = devices[j].getInfo<CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE>();
+                sprintf(noticeString, "%lld", clUlong);
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 8;
                 clUint = devices[j].getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
                 sprintf(noticeString, "%u", clUint);
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
-                indices[0] = 8;
+                indices[0] = 9;
                 sizeTVector = devices[j].getInfo<CL_DEVICE_MAX_WORK_ITEM_SIZES>();
                 sprintf(noticeString, "(%lu, %lu, %lu)", sizeTVector.at(0), sizeTVector.at(1), sizeTVector.at(2));
                 StoreStringInTextWave(noticeString, devicesWave, indices);
                 
-                indices[0] = 9;
+                indices[0] = 10;
+                sizeTVar = devices[j].getInfo<CL_DEVICE_MAX_WORK_GROUP_SIZE>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(sizeTVar));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 11;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 12;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 13;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 14;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 15;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 16;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 17;
+                clUint = devices[j].getInfo<CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF>();
+                sprintf(noticeString, "%lu", static_cast<unsigned long>(clUint));
+                StoreStringInTextWave(noticeString, devicesWave, indices);
+                
+                indices[0] = 18;
                 StoreStringInTextWave(devices[j].getInfo<CL_DEVICE_EXTENSIONS>(), devicesWave, indices);
             }
         }
