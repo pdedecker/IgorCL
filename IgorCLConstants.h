@@ -16,6 +16,7 @@ const int IgorCLWriteOnly = 1 << 1;
 const int IgorCLReadOnly = 1 << 2;
 const int IgorCLUseHostPointer = 1 << 3;
 const int IgorCLIsLocalMemory = 1 << 4;
+const int IgorCLIsScalarArgument = 1 << 5;
 
 class IgorCLError {
 public:

@@ -149,9 +149,8 @@ int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
     if (igorCLFlags & IgorCLUseHostPointer)
         openCLFlags |= CL_MEM_USE_HOST_PTR;
     
-    // this function does not bother with IgorCLIsLocalMemory
-    // because there is no corresponding OpenCL flag.
-    // It is known to Igor only.
+    // this function does not bother with IgorCLIsLocalMemory or IgorCLIsScalarArgument
+    // because there are no corresponding OpenCL flags.
     
     return openCLFlags;
 }

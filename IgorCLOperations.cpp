@@ -113,7 +113,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Buffer> buffers;
     buffers.reserve(nWaves);
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory)) {
+        if ((memFlags.size() > i) && (memFlags.at(i) & (IgorCLIsLocalMemory | IgorCLIsScalarArgument))) {
             buffers.push_back(cl::Buffer());
             continue;
         }
@@ -130,10 +130,10 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         buffers.push_back(buffer);
     }
     
-    // and copy all of the data to the device, unless we want to use the host memory, we're using shared memory,
+    // and copy all of the data to the device, unless we want to use the host memory, we're using shared memory, this is a scalar argument,
     // or this memory is write-only.
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
+        if ((memFlags.size() > i) && (memFlags.at(i) & (IgorCLIsLocalMemory | IgorCLIsScalarArgument)))
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
@@ -148,6 +148,8 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     for (size_t i = 0; i < nWaves; i+=1) {
         if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory)) {
             status = kernel.setArg(i, dataSizes.at(i), NULL);
+        } else if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsScalarArgument)) {
+            status = kernel.setArg(i, dataSizes.at(i), dataPointers.at(i));
         } else {
             status = kernel.setArg(i, buffers.at(i));
         }
@@ -160,10 +162,10 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
     
-    // copy arguments back into the waves, unless we have used host memory, used shared memory,
+    // copy arguments back into the waves, unless we have used host memory, used shared memory, this is a scalar argument,
     // or this memory is read-only.
     for (size_t i = 0; i < nWaves; i+=1) {
-        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLIsLocalMemory))
+        if ((memFlags.size() > i) && (memFlags.at(i) & (IgorCLIsLocalMemory | IgorCLIsScalarArgument)))
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
             continue;
