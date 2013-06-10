@@ -135,9 +135,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     for (size_t i = 0; i < nWaves; i+=1) {
         if ((memFlags.size() > i) && (memFlags.at(i) & (IgorCLIsLocalMemory | IgorCLIsScalarArgument)))
             continue;
-        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
-            continue;
-        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_WRITE_ONLY))
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & (CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY)))
             continue;
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
@@ -167,9 +165,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     for (size_t i = 0; i < nWaves; i+=1) {
         if ((memFlags.size() > i) && (memFlags.at(i) & (IgorCLIsLocalMemory | IgorCLIsScalarArgument)))
             continue;
-        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_USE_HOST_PTR))
-            continue;
-        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & CL_MEM_READ_ONLY))
+        if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & (CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY)))
             continue;
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
