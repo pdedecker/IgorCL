@@ -95,7 +95,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         throw IgorCLError(status);
     
     // build the program
-    status = program.build();
+    status = program.build("-cl-mad-enable");
     if (status != CL_SUCCESS) {
         std::string buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
         for (int i = 0; i < buildLog.size(); ++i) {
@@ -209,7 +209,7 @@ std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, 
     
     // build the program
     buildLog.clear();
-    status = program.build();
+    status = program.build("-cl-mad-enable");
     buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     for (int i = 0; i < buildLog.size(); ++i) {
         if (buildLog[i] == '\n')
