@@ -10,6 +10,7 @@
 1100 STR#
 BEGIN
 	"IgorCL requires Igor Pro 6.0 or later.\0",		// OLD_IGOR
+	"OpenCL returned an error (see command line output)\0",
 
 	"\0"							// NOTE: NULL required to terminate the resource.
 END
