@@ -462,7 +462,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
     }
     
     SetOperationNumVar("V_Flag", err);
-    SetOperationStrVar("S_BuildLog", "");
+    SetOperationStrVar("S_BuildLog", buildLog.c_str());
     
 	return err;
 }

@@ -61,6 +61,8 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
+    if (devices.size() <= deviceIndex)
+        throw IgorCLError(CL_DEVICE_NOT_FOUND);
     cl::Device device = devices.at(deviceIndex);
     
     // initialize the context
@@ -208,12 +210,12 @@ std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, 
     // build the program
     buildLog.clear();
     status = program.build();
+    buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
+    for (int i = 0; i < buildLog.size(); ++i) {
+        if (buildLog[i] == '\n')
+            buildLog[i] = '\r';
+    }
     if (status != CL_SUCCESS) {
-        buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
-        for (int i = 0; i < buildLog.size(); ++i) {
-            if (buildLog[i] == '\n')
-                buildLog[i] = '\r';
-        }
         throw IgorCLError(status);
     }
     
