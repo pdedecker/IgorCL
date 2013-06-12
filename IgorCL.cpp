@@ -45,12 +45,12 @@ struct IgorCLRuntimeParams {
 	Handle KERNFlag_kernelName;
 	int KERNFlagParamsSet[1];
     
-	// Parameters for /RNG flag group.
-	int RNGFlagEncountered;
-	double RNGFlag_globalSize0;
-	double RNGFlag_globalSize1;
-	double RNGFlag_globalSize2;
-	int RNGFlagParamsSet[3];
+	// Parameters for /GSZE flag group.
+	int GSZEFlagEncountered;
+	double GSZEFlag_globalSize0;
+	double GSZEFlag_globalSize1;
+	double GSZEFlag_globalSize2;
+	int GSZEFlagParamsSet[3];
     
 	// Parameters for /WGRP flag group.
 	int WGRPFlagEncountered;
@@ -230,16 +230,16 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
         }
         
         cl::NDRange globalRange;
-        if (p->RNGFlagEncountered) {
-            // Parameter: p->RNGFlag_globalSize0
-            // Parameter: p->RNGFlag_globalSize1
-            // Parameter: p->RNGFlag_globalSize2
-            if ((p->RNGFlag_globalSize0 < 0) || (p->RNGFlag_globalSize1 < 0) || (p->RNGFlag_globalSize2 < 0))
+        if (p->GSZEFlagEncountered) {
+            // Parameter: p->GSZEFlag_globalSize0
+            // Parameter: p->GSZEFlag_globalSize1
+            // Parameter: p->GSZEFlag_globalSize2
+            if ((p->GSZEFlag_globalSize0 < 0) || (p->GSZEFlag_globalSize1 < 0) || (p->GSZEFlag_globalSize2 < 0))
                 return EXPECT_POS_NUM;
-            size_t gRange0 = p->RNGFlag_globalSize0 + 0.5;
-            size_t gRange1 = p->RNGFlag_globalSize1 + 0.5;
-            size_t gRange2 = p->RNGFlag_globalSize2 + 0.5;
-            globalRange = cl::NDRange(gRange0, gRange1, gRange2);
+            size_t gSize0 = p->GSZEFlag_globalSize0 + 0.5;
+            size_t gSize1 = p->GSZEFlag_globalSize1 + 0.5;
+            size_t gSize2 = p->GSZEFlag_globalSize2 + 0.5;
+            globalRange = cl::NDRange(gSize0, gSize1, gSize2);
         } else {
             XOPNotice("A range must be specified (/RNG flag)\r");
             return SYNERR;
@@ -776,8 +776,8 @@ static int RegisterIgorCL(void) {
 	const char* runtimeStrVarList;
     
 	// NOTE: If you change this template, you must change the IgorCLRuntimeParams structure as well.
-    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /RNG={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z[=number:quiet] wave[12]:dataWaves";
-    runtimeNumVarList = "V_Flag;";
+    cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /GSZE={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z[=number:quiet] wave[12]:dataWaves";
+	runtimeNumVarList = "V_Flag;";
 	runtimeStrVarList = "";
 	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
 }
