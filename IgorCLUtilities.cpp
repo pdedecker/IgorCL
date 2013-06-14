@@ -7,6 +7,7 @@
 //
 
 #include <stdexcept>
+#include <string>
 
 #include "IgorCLUtilities.h"
 #include "IgorCLConstants.h"
@@ -101,13 +102,17 @@ size_t SharedMemorySizeFromWave(waveHndl wave) {
 }
 
 int GetFirstDeviceOfType(const int platformIndex, const std::string& deviceTypeStr) {
-    // rework deviceTypeStr to an OpenCL constant
+    std::string upperCaseStr(deviceTypeStr);
+    for (int i = 0; i < upperCaseStr.size(); ++i) {
+        upperCaseStr[i] = std::toupper(upperCaseStr[i]);
+    }
+    
     int deviceType;
-    if (deviceTypeStr == "CPU") {
+    if (upperCaseStr == "CPU") {
         deviceType = CL_DEVICE_TYPE_CPU;
-    } else if (deviceTypeStr == "GPU") {
+    } else if (upperCaseStr == "GPU") {
         deviceType = CL_DEVICE_TYPE_GPU;
-    } else if (deviceTypeStr == "Accelerator") {
+    } else if (upperCaseStr == "ACCELERATOR") {
         deviceType = CL_DEVICE_TYPE_ACCELERATOR;
     } else {
         throw std::runtime_error("Unknown device type string");

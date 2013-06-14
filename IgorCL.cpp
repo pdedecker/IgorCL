@@ -335,7 +335,7 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     }
     catch (IgorCLError& e) {
         int errorCode = e.getErrorCode();
-        char noticeStr[20];
+        char noticeStr[50];
         sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
         XOPNotice(noticeStr);
         SetOperationNumVar("V_Flag", errorCode);
