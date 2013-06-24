@@ -56,12 +56,11 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     std::vector<cl::Device> deviceAsVector(1, device);
     
     // fetch a queue on the platform/device combination
-    cl_int status;
-    cl::CommandQueue commandQueue(context, device, 0, &status);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
+    IgorCLCommandQueueProvider commandQueueProvider(platformIndex, deviceIndex);
+    cl::CommandQueue commandQueue = commandQueueProvider.getCommandQueue();
     
     // get the program, either using text or using source
+    cl_int status = 0;
     cl::Program program;
     if (sourceText != NULL) {
         // use text source

@@ -166,10 +166,10 @@ void IgorCLContextAndDeviceProvider::getContextForPlatformAndDevice(const int pl
     
     // check if we already have a context for this combination.
     std::pair<int, int> requestedIndices(platformIndex, deviceIndex);
-    for (auto it = availableContextIndices.begin(); it != availableContextIndices.end(); ++it) {
-        if (*it == requestedIndices) {
-            context = availableContexts.at(it - availableContextIndices.begin());
-            device = deviceForContext.at(it - availableContextIndices.begin());
+    for (int i = 0; i < availableContextIndices.size(); ++i) {
+        if (availableContextIndices[i] == requestedIndices) {
+            context = availableContexts.at(i);
+            device = deviceForContext.at(i);
             return;
         }
     }
