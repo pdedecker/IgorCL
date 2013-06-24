@@ -162,7 +162,7 @@ int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
 }
 
 void IgorCLContextAndDeviceProvider::getContextForPlatformAndDevice(const int platformIndex, const int deviceIndex, cl::Context& context, cl::Device &device) {
-    std::lock_guard<std::mutex>(this->contextMutex);
+    std::lock_guard<std::mutex> lock(this->contextMutex);
     
     // check if we already have a context for this combination.
     std::pair<int, int> requestedIndices(platformIndex, deviceIndex);
@@ -207,3 +207,70 @@ void IgorCLContextAndDeviceProvider::getContextForPlatformAndDevice(const int pl
 }
 
 IgorCLContextAndDeviceProvider contextAndDeviceProvider;
+
+cl::CommandQueue IgorCLCommandQueueFactory::getCommandQueue(const int platformIndex, const int deviceIndex) {
+    std::lock_guard<std::mutex> lock(this->_queueMutex);
+    
+    // do we have a queue available?
+    bool haveCacheForMatchingQueues = false;
+    std::pair<int, int> requestedIndices(platformIndex, deviceIndex);
+    for (int i = 0; i < _availableQueueIndices.size(); ++i) {
+        if (_availableQueueIndices[i] == requestedIndices) {
+            haveCacheForMatchingQueues = true;
+            std::vector<cl::CommandQueue>* matchingQueues = &_availableQueues.at(i);
+            int nMatchingQueues = matchingQueues->size();
+            if (nMatchingQueues > 0) {
+                cl::CommandQueue theQueue = matchingQueues->at(nMatchingQueues - 1);
+                matchingQueues->erase(matchingQueues->end() - 1);
+                return theQueue;
+            }
+        }
+    }
+    
+    // if we're still here then we need to add a new queue and return that.
+    cl::Context context;
+    cl::Device device;
+    contextAndDeviceProvider.getContextForPlatformAndDevice(platformIndex, deviceIndex, context, device);
+    cl_int status;
+    cl::CommandQueue commandQueue(context, device, 0, &status);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    
+    if (!haveCacheForMatchingQueues) {
+        // add storage for this platform/device combination,
+        // but do not store the queue itself since it is in use and therefore unavailable.
+        _availableQueueIndices.push_back(requestedIndices);
+        _availableQueues.push_back(std::vector<cl::CommandQueue>());
+    }
+    
+    return commandQueue;
+}
+
+void IgorCLCommandQueueFactory::returnCommandQueue(const cl::CommandQueue commandQueue, const int platformIndex, const int deviceIndex) {
+    std::lock_guard<std::mutex> lock(this->_queueMutex);
+    
+    std::pair<int, int> requestedIndices(platformIndex, deviceIndex);
+    for (int i = 0; i < _availableQueueIndices.size(); ++i) {
+        if (_availableQueueIndices[i] == requestedIndices) {
+            std::vector<cl::CommandQueue>* matchingQueues = &_availableQueues.at(i);
+            matchingQueues->push_back(commandQueue);
+            return;
+        }
+    }
+    
+    // still here? Shouldn't happen.
+    throw std::logic_error("Returning command queue but no matching storage");
+}
+
+IgorCLCommandQueueFactory commandQueueFactory;
+
+IgorCLCommandQueueProvider::IgorCLCommandQueueProvider(const int platformIndex, const int deviceIndex) :
+    _platformIndex(platformIndex),
+    _deviceIndex(deviceIndex)
+{
+    _commandQueue = commandQueueFactory.getCommandQueue(platformIndex, deviceIndex);
+}
+
+IgorCLCommandQueueProvider::~IgorCLCommandQueueProvider() {
+    commandQueueFactory.returnCommandQueue(_commandQueue, _platformIndex, _deviceIndex);
+}

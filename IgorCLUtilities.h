@@ -44,5 +44,33 @@ private:
 
 extern IgorCLContextAndDeviceProvider contextAndDeviceProvider;
 
+class IgorCLCommandQueueFactory {
+public:
+    IgorCLCommandQueueFactory() {;}
+    ~IgorCLCommandQueueFactory() {;}
+    
+    cl::CommandQueue getCommandQueue(const int platformIndex, const int deviceIndex);
+    void returnCommandQueue(const cl::CommandQueue commandQueue, const int platformIndex, const int deviceIndex);
+    
+private:
+    std::vector<std::pair<int, int> > _availableQueueIndices;
+    std::vector<std::vector<cl::CommandQueue> > _availableQueues;
+    
+    std::mutex _queueMutex;
+};
+
+class IgorCLCommandQueueProvider {
+public:
+    IgorCLCommandQueueProvider(const int platformIndex, const int deviceIndex);
+    ~IgorCLCommandQueueProvider();
+    
+    cl::CommandQueue getCommandQueue() const {return _commandQueue;}
+    
+private:
+    int _platformIndex;
+    int _deviceIndex;
+    cl::CommandQueue _commandQueue;
+};
+
 
 #endif /* defined(__IgorCL__IgorCLUtilities__) */
