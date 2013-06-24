@@ -66,7 +66,7 @@ struct IgorCLRuntimeParams {
     
 	// Parameters for /Z flag group.
 	int ZFlagEncountered;
-	double ZFlag_quiet;
+	double ZFlag_quiet;						// Optional parameter.
 	int ZFlagParamsSet[1];
     
 	// Main parameters.
@@ -79,6 +79,7 @@ struct IgorCLRuntimeParams {
 	// These are postamble fields that Igor sets.
 	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
 	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+	UserFunctionThreadInfoPtr tp;			// If not null, we are running from a ThreadSafe function.
 };
 typedef struct IgorCLRuntimeParams IgorCLRuntimeParams;
 typedef struct IgorCLRuntimeParams* IgorCLRuntimeParamsPtr;
@@ -111,7 +112,7 @@ struct IgorCLCompileRuntimeParams {
     
 	// Parameters for /Z flag group.
 	int ZFlagEncountered;
-	double ZFlag_quiet;
+	double ZFlag_quiet;						// Optional parameter.
 	int ZFlagParamsSet[1];
     
 	// Main parameters.
@@ -124,14 +125,15 @@ struct IgorCLCompileRuntimeParams {
 	// These are postamble fields that Igor sets.
 	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
 	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+	UserFunctionThreadInfoPtr tp;			// If not null, we are running from a ThreadSafe function.
 };
 typedef struct IgorCLCompileRuntimeParams IgorCLCompileRuntimeParams;
 typedef struct IgorCLCompileRuntimeParams* IgorCLCompileRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
-// Runtime param structure for IGORCLInfo operation.
+// Runtime param structure for IgorCLInfo operation.
 #pragma pack(2)	// All structures passed to Igor are two-byte aligned.
-struct IGORCLInfoRuntimeParams {
+struct IgorCLInfoRuntimeParams {
 	// Flag parameters.
     
 	// Main parameters.
@@ -139,9 +141,10 @@ struct IGORCLInfoRuntimeParams {
 	// These are postamble fields that Igor sets.
 	int calledFromFunction;					// 1 if called from a user function, 0 otherwise.
 	int calledFromMacro;					// 1 if called from a macro, 0 otherwise.
+	UserFunctionThreadInfoPtr tp;			// If not null, we are running from a ThreadSafe function.
 };
-typedef struct IGORCLInfoRuntimeParams IGORCLInfoRuntimeParams;
-typedef struct IGORCLInfoRuntimeParams* IGORCLInfoRuntimeParamsPtr;
+typedef struct IgorCLInfoRuntimeParams IgorCLInfoRuntimeParams;
+typedef struct IgorCLInfoRuntimeParams* IgorCLInfoRuntimeParamsPtr;
 #pragma pack()	// Reset structure alignment to default.
 
 static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
@@ -472,7 +475,7 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
 	return err;
 }
 
-static int ExecuteIgorCLInfo(IGORCLInfoRuntimeParamsPtr p) {
+static int ExecuteIgorCLInfo(IgorCLInfoRuntimeParamsPtr p) {
 	int err = 0;
     cl_int status;
     
@@ -784,7 +787,7 @@ static int RegisterIgorCL(void) {
     cmdTemplate = "IgorCL /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /SRCT=string:sourceText /SRCB=wave:sourceBinary /KERN=string:kernelName /GSZE={number:globalSize0, number:globalSize1, number:globalSize2} /WGRP={number:wgSize0, number:wgSize1, number:wgSize2} /MFLG=wave:memoryFlagsWave /Z[=number:quiet] wave[12]:dataWaves";
 	runtimeNumVarList = "V_Flag;";
 	runtimeStrVarList = "";
-	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, 0);
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLRuntimeParams), (void*)ExecuteIgorCL, kOperationIsThreadSafe);
 }
 
 static int RegisterIgorCLCompile(void) {
@@ -796,7 +799,7 @@ static int RegisterIgorCLCompile(void) {
     cmdTemplate = "IgorCLCompile /PLTM=number:platform /DEV=number:device /DTYP=string:deviceType /DEST=dataFolderAndName:destination /Z[=number:quiet] string:programSource ";
     runtimeNumVarList = "V_Flag";
 	runtimeStrVarList = "S_BuildLog";
-	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, 0);
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLCompileRuntimeParams), (void*)ExecuteIgorCLCompile, kOperationIsThreadSafe);
 }
 
 static int RegisterIgorCLInfo(void) {
@@ -808,7 +811,7 @@ static int RegisterIgorCLInfo(void) {
 	cmdTemplate = "IgorCLInfo ";
 	runtimeNumVarList = "";
 	runtimeStrVarList = "";
-	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IGORCLInfoRuntimeParams), (void*)ExecuteIgorCLInfo, 0);
+	return RegisterOperation(cmdTemplate, runtimeNumVarList, runtimeStrVarList, sizeof(IgorCLInfoRuntimeParams), (void*)ExecuteIgorCLInfo, kOperationIsThreadSafe);
 }
 
 static int

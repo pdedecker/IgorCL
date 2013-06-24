@@ -34,14 +34,14 @@ resource 'XOPI' (1100) {
 
 resource 'XOPC' (1100) {
 	{
-		"IgorCL",								// Name of operation.
-		waveOP+XOPOp+compilableOp,			// Operation's category.
+		"IgorCL",                                       // Name of operation.
+		waveOP+XOPOp+compilableOp+threadSafeOp,			// Operation's category.
         
-        "IgorCLCompile",					// Name of operation.
-		waveOP+XOPOp+compilableOp,			// Operation's category.
+        "IgorCLCompile",                                // Name of operation.
+		waveOP+XOPOp+compilableOp+threadSafeOp,			// Operation's category.
         
-        "IGORCLInfo",								// Name of operation.
-		waveOP+XOPOp+compilableOp,			// Operation's category.
+        "IGORCLInfo",                                   // Name of operation.
+		waveOP+XOPOp+compilableOp+threadSafeOp,			// Operation's category.
 	}
 };
 
