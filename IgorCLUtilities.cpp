@@ -159,3 +159,50 @@ int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
     
     return openCLFlags;
 }
+
+void IgorCLContextAndDeviceProvider::getContextForPlatformAndDevice(const int platformIndex, const int deviceIndex, cl::Context& context, cl::Device &device) {
+    std::lock_guard<std::mutex>(this->contextMutex);
+    
+    // check if we already have a context for this combination.
+    std::pair<int, int> requestedIndices(platformIndex, deviceIndex);
+    for (auto it = availableContextIndices.begin(); it != availableContextIndices.end(); ++it) {
+        if (*it == requestedIndices) {
+            context = availableContexts.at(it - availableContextIndices.begin());
+            device = deviceForContext.at(it - availableContextIndices.begin());
+            return;
+        }
+    }
+    
+    // if we are still here then the context needs to be created.
+    // initialize the platforms
+    cl_int status;
+    std::vector<cl::Platform> platforms;
+    status = cl::Platform::get(&platforms);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    cl::Platform platform = platforms.at(platformIndex);
+    
+    // fetch the device
+    std::vector<cl::Device> devices;
+    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    if (devices.size() <= deviceIndex)
+        throw IgorCLError(CL_DEVICE_NOT_FOUND);
+    device = devices.at(deviceIndex);
+    
+    // initialize the context
+    std::vector<cl::Device> deviceAsVector;
+    deviceAsVector.push_back(device);
+    context = cl::Context(deviceAsVector, NULL, NULL, NULL, &status);
+    if (status != CL_SUCCESS)
+        throw IgorCLError(status);
+    
+    availableContextIndices.push_back(requestedIndices);
+    availableContexts.push_back(context);
+    deviceForContext.push_back(device);
+    
+    return;
+}
+
+IgorCLContextAndDeviceProvider contextAndDeviceProvider;
