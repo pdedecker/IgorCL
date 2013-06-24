@@ -457,6 +457,11 @@ static int ExecuteIgorCLCompile(IgorCLCompileRuntimeParamsPtr p) {
     catch (std::range_error& e) {
         return INDEX_OUT_OF_RANGE;
     }
+    catch (std::runtime_error& e) {
+        XOPNotice(e.what());
+        XOPNotice("\r");
+        return GENERAL_BAD_VIBS;
+    }
     catch (...) {
         return GENERAL_BAD_VIBS;
     }
