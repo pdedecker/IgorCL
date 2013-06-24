@@ -51,6 +51,7 @@ public:
     
     cl::CommandQueue getCommandQueue(const int platformIndex, const int deviceIndex);
     void returnCommandQueue(const cl::CommandQueue commandQueue, const int platformIndex, const int deviceIndex);
+    void deleteAllCommandQueues();
     
 private:
     std::vector<std::pair<int, int> > _availableQueueIndices;
@@ -58,6 +59,8 @@ private:
     
     std::mutex _queueMutex;
 };
+
+extern IgorCLCommandQueueFactory commandQueueFactory;
 
 class IgorCLCommandQueueProvider {
 public:

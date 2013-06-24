@@ -169,7 +169,7 @@ std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, 
     cl::Device device;
     contextAndDeviceProvider.getContextForPlatformAndDevice(platformIndex, deviceIndex, context, device);
     
-    // initialize the program and have it build the source code
+    // initialize the program
     cl_int status;
     cl::Program program(context, programSource, false, &status);
     if (status != CL_SUCCESS)

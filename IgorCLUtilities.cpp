@@ -262,6 +262,14 @@ void IgorCLCommandQueueFactory::returnCommandQueue(const cl::CommandQueue comman
     throw std::logic_error("Returning command queue but no matching storage");
 }
 
+void IgorCLCommandQueueFactory::deleteAllCommandQueues() {
+    std::lock_guard<std::mutex> lock(_queueMutex);
+    
+    _availableQueueIndices.clear();
+    _availableQueues.clear();
+    
+}
+
 IgorCLCommandQueueFactory commandQueueFactory;
 
 IgorCLCommandQueueProvider::IgorCLCommandQueueProvider(const int platformIndex, const int deviceIndex) :

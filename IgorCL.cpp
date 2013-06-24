@@ -839,7 +839,9 @@ XOPEntry(void)
 	XOPIORecResult result = 0;
 	
 	switch (GetXOPMessage()) {
-		// We don't need to handle any messages for this XOP.
+		case CLEANUP:
+            commandQueueFactory.deleteAllCommandQueues();
+            break;
 	}
 	SetXOPResult(result);
 }
