@@ -165,28 +165,13 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
 }
 
 std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, const std::string programSource, std::string& buildLog) {
-    // initialize the platforms and devices
-    cl_int status;
-    std::vector<cl::Platform> platforms;
-    status = cl::Platform::get(&platforms);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
-    cl::Platform platform = platforms.at(platformIndex);
-    
-    std::vector<cl::Device> devices;
-    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
-    cl::Device device = devices.at(deviceIndex);
-    
-    // initialize the context
-    std::vector<cl::Device> deviceAsVector;
-    deviceAsVector.push_back(device);
-    cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
+    // obtain the appropriate context and device.
+    cl::Context context;
+    cl::Device device;
+    contextAndDeviceProvider.getContextForPlatformAndDevice(platformIndex, deviceIndex, context, device);
     
     // initialize the program and have it build the source code
+    cl_int status;
     cl::Program program(context, programSource, &status);
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
