@@ -60,11 +60,11 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
     cl::CommandQueue commandQueue = commandQueueProvider.getCommandQueue();
     
     // get the program, either using text or using source
-    cl_int status = 0;
+    cl_int status;
     cl::Program program;
     if (sourceText != NULL) {
         // use text source
-        program = cl::Program(context, *sourceText, &status);
+        program = cl::Program(context, *sourceText, false, &status);
     } else {
         // use binary
         const void* programPointer = &(sourceBinary->at(0));
@@ -171,7 +171,7 @@ std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, 
     
     // initialize the program and have it build the source code
     cl_int status;
-    cl::Program program(context, programSource, &status);
+    cl::Program program(context, programSource, false, &status);
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
     
