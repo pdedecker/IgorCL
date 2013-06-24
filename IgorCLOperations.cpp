@@ -49,30 +49,14 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         openCLMemFlags.push_back(clFlags);
     }
     
-    // initialize the platforms and devices
-    cl_int status;
-    std::vector<cl::Platform> platforms;
-    status = cl::Platform::get(&platforms);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
-    cl::Platform platform = platforms.at(platformIndex);
-    
-    std::vector<cl::Device> devices;
-    status = platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
-    if (devices.size() <= deviceIndex)
-        throw IgorCLError(CL_DEVICE_NOT_FOUND);
-    cl::Device device = devices.at(deviceIndex);
-    
-    // initialize the context
-    std::vector<cl::Device> deviceAsVector;
-    deviceAsVector.push_back(device);
-    cl::Context context(deviceAsVector, NULL, NULL, NULL, &status);
-    if (status != CL_SUCCESS)
-        throw IgorCLError(status);
+    // obtain the appropriate context and device.
+    cl::Context context;
+    cl::Device device;
+    contextAndDeviceProvider.getContextForPlatformAndDevice(platformIndex, deviceIndex, context, device);
+    std::vector<cl::Device> deviceAsVector(1, device);
     
     // fetch a queue on the platform/device combination
+    cl_int status;
     cl::CommandQueue commandQueue(context, device, 0, &status);
     if (status != CL_SUCCESS)
         throw IgorCLError(status);
