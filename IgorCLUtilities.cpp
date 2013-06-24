@@ -8,6 +8,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <cctype>
 
 #include "IgorCLUtilities.h"
 #include "IgorCLConstants.h"
