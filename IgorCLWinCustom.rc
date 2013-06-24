@@ -29,13 +29,13 @@ END
 1100 XOPC							// Describes operations that the XOP adds to IGOR.
 BEGIN
 	"IgorCL\0",
-	waveOp | XOPOp | compilableOp,
+	waveOp | XOPOp | compilableOp | threadSafeOp,
 
 	"IgorCLCompile\0",
-	waveOp | XOPOp | compilableOp,
+	waveOp | XOPOp | compilableOp | threadSafeOp,
 
 	"IgorCLInfo\0",
-	waveOp | XOPOp | compilableOp,
+	waveOp | XOPOp | compilableOp | threadSafeOp,
 
 	"\0"							// NOTE: NULL required to terminate the resource.
 END
