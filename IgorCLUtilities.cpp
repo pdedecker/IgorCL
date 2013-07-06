@@ -61,7 +61,7 @@ size_t WaveDataSizeInBytes(waveHndl wave) {
     if (waveType & NT_CMPLX)
         waveType &= ~NT_CMPLX;      // remove complex flag - we will take care of this later
     
-    switch (WaveType(wave)) {
+    switch (waveType) {
         case NT_I8:
             bytesPerPoint = 1;
             break;
