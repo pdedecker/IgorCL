@@ -9,13 +9,13 @@
 #ifndef __IgorCL__IgorCLUtilities__
 #define __IgorCL__IgorCLUtilities__
 
+#include "cl.hpp"
 #include <string>
 #include <vector>
 #include <mutex>
 #include <boost/smart_ptr.hpp>
 
 #include "XOPStandardHeaders.h"
-#include "cl.hpp"
 
 void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* indices);
 std::string GetStdStringFromHandle(const Handle handle);

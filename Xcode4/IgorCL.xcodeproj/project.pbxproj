@@ -15,7 +15,6 @@
 		AA5D4C5A057E889500B0C55B /* IgorCL.r in Rez */ = {isa = PBXBuildFile; fileRef = AA5D4C58057E889500B0C55B /* IgorCL.r */; };
 		AA687D51057E97BD00628003 /* libXOPSupport.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AA687D50057E97BD00628003 /* libXOPSupport.a */; };
 		D03F8E9816C24A8700671EFC /* IgorCLOperations.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */; };
-		D03F8E9916C2576100671EFC /* Kernels.cl in Sources */ = {isa = PBXBuildFile; fileRef = D073DF5616C18EBC004D1B51 /* Kernels.cl */; };
 		D054FA1216CA5952005EA5F0 /* IgorCLConstants.h in Headers */ = {isa = PBXBuildFile; fileRef = D054FA1116CA5952005EA5F0 /* IgorCLConstants.h */; };
 		D073DF5216C18B99004D1B51 /* OpenCL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D073DF5116C18B99004D1B51 /* OpenCL.framework */; };
 		D073DF5916C1921B004D1B51 /* cl.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D073DF5816C1921B004D1B51 /* cl.hpp */; };
@@ -49,7 +48,6 @@
 		D073DF5116C18B99004D1B51 /* OpenCL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenCL.framework; path = /System/Library/Frameworks/OpenCL.framework; sourceTree = "<absolute>"; };
 		D073DF5316C18DF7004D1B51 /* IgorCLOperations.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = IgorCLOperations.h; path = ../IgorCLOperations.h; sourceTree = "<group>"; };
 		D073DF5416C18E0F004D1B51 /* IgorCLOperations.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCLOperations.cpp; path = ../IgorCLOperations.cpp; sourceTree = "<group>"; };
-		D073DF5616C18EBC004D1B51 /* Kernels.cl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.opencl; name = Kernels.cl; path = ../Kernels.cl; sourceTree = "<group>"; };
 		D073DF5816C1921B004D1B51 /* cl.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = cl.hpp; path = ../cl.hpp; sourceTree = "<group>"; };
 		D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IgorCLUtilities.cpp; path = ../IgorCLUtilities.cpp; sourceTree = "<group>"; };
 		D0779BCB16C294AB00E314C2 /* IgorCLUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IgorCLUtilities.h; path = ../IgorCLUtilities.h; sourceTree = "<group>"; };
@@ -112,7 +110,6 @@
 				D0779BCA16C294AB00E314C2 /* IgorCLUtilities.cpp */,
 				D054FA1116CA5952005EA5F0 /* IgorCLConstants.h */,
 				D073DF5816C1921B004D1B51 /* cl.hpp */,
-				D073DF5616C18EBC004D1B51 /* Kernels.cl */,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -169,6 +166,8 @@
 /* Begin PBXProject section */
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = 89155245093FB1A30062870E /* Build configuration list for PBXProject "IgorCL" */;
 			compatibilityVersion = "Xcode 2.4";
 			developmentRegion = English;
@@ -214,7 +213,6 @@
 			files = (
 				AA5D4C59057E889500B0C55B /* IgorCL.cpp in Sources */,
 				D03F8E9816C24A8700671EFC /* IgorCLOperations.cpp in Sources */,
-				D03F8E9916C2576100671EFC /* Kernels.cl in Sources */,
 				D0779BCC16C294AB00E314C2 /* IgorCLUtilities.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -236,8 +234,7 @@
 		89155242093FB1A30062870E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
 				DEBUGGING_SYMBOLS = YES;
 				EXPORTED_SYMBOLS_FILE = ./Exports.exp;
@@ -276,8 +273,7 @@
 		89155243093FB1A30062870E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = YES;
 				EXPORTED_SYMBOLS_FILE = ./Exports.exp;
 				FRAMEWORK_SEARCH_PATHS = "";
@@ -313,8 +309,7 @@
 		89155244093FB1A30062870E /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				EXPORTED_SYMBOLS_FILE = ./Exports.exp;
 				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_ENABLE_TRIGRAPHS = NO;
@@ -348,42 +343,39 @@
 		89155246093FB1A30062870E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_VERSION = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
 		89155247093FB1A30062870E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_VERSION = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Release;
 		};
 		89155248093FB1A30062870E /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_VERSION = "";
 				MACOSX_DEPLOYMENT_TARGET = 10.7;
-				SDKROOT = macosx10.7;
+				SDKROOT = macosx10.8;
 			};
 			name = Default;
 		};

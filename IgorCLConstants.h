@@ -9,14 +9,13 @@
 #ifndef IgorCL_IgorCLConstants_h
 #define IgorCL_IgorCLConstants_h
 
-#include "cl.hpp"
-
 const int IgorCLReadWrite = 1 << 0;
 const int IgorCLWriteOnly = 1 << 1;
 const int IgorCLReadOnly = 1 << 2;
 const int IgorCLUseHostPointer = 1 << 3;
 const int IgorCLIsLocalMemory = 1 << 4;
 const int IgorCLIsScalarArgument = 1 << 5;
+const int IgorCLUsePinnedMemory = 1 << 6;
 
 class IgorCLError {
 public:

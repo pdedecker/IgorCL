@@ -1,5 +1,4 @@
 #include "XOPStandardHeaders.h"			// Include ANSI headers, Mac headers, IgorXOP.h, XOP.h and XOPSupport.h
-#include "cl.hpp"
 #include <vector>
 #include <stdexcept>
 
@@ -244,7 +243,7 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
             size_t gSize2 = p->GSZEFlag_globalSize2 + 0.5;
             globalRange = cl::NDRange(gSize0, gSize1, gSize2);
         } else {
-            XOPNotice("A range must be specified (/RNG flag)\r");
+            XOPNotice("A global size must be specified (/GSZE flag)\r");
             return SYNERR;
         }
         

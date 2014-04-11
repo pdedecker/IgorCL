@@ -12,7 +12,6 @@
 
 #include "IgorCLUtilities.h"
 #include "IgorCLConstants.h"
-#include "cl.hpp"
 
 void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* indices) {
     int err;
@@ -146,6 +145,15 @@ int GetFirstDeviceOfType(const int platformIndex, const std::string& deviceTypeS
 int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
     int openCLFlags = 0;
     
+    // some error checking.
+    if ((igorCLFlags & IgorCLWriteOnly) && (igorCLFlags & IgorCLReadOnly)) {
+        throw int(INCOMPATIBLE_FLAGS);
+    }
+    if ((igorCLFlags & IgorCLUsePinnedMemory) && (igorCLFlags & IgorCLUseHostPointer)) {
+        throw int(INCOMPATIBLE_FLAGS);
+    }
+    
+    // convert all IgorCL flags for which there is an equivalent OpenCL flag.
     if (igorCLFlags & IgorCLReadWrite)
         openCLFlags |= CL_MEM_READ_WRITE;
     if (igorCLFlags & IgorCLWriteOnly)
@@ -154,9 +162,6 @@ int ConvertIgorCLFlagsToOpenCLFlags(const int igorCLFlags) {
         openCLFlags |= CL_MEM_READ_ONLY;
     if (igorCLFlags & IgorCLUseHostPointer)
         openCLFlags |= CL_MEM_USE_HOST_PTR;
-    
-    // this function does not bother with IgorCLIsLocalMemory or IgorCLIsScalarArgument
-    // because there are no corresponding OpenCL flags.
     
     return openCLFlags;
 }

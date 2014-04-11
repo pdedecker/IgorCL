@@ -78,7 +78,7 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
         throw IgorCLError(status);
     
     // build the program
-    status = program.build("-cl-mad-enable");
+    status = program.build();
     if (status != CL_SUCCESS) {
         std::string buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
         for (int i = 0; i < buildLog.size(); ++i) {
@@ -122,6 +122,22 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & (CL_MEM_USE_HOST_PTR | CL_MEM_WRITE_ONLY)))
             continue;
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLUsePinnedMemory)) {
+            cl::Buffer pinnedBuffer(context, CL_MEM_ALLOC_HOST_PTR, dataSizes.at(i), NULL, &status);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            void* mappedBuffer = commandQueue.enqueueMapBuffer(pinnedBuffer, true, CL_MAP_WRITE, 0, dataSizes.at(i), NULL, NULL, &status);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            memcpy(mappedBuffer, static_cast<void*>(dataPointers.at(i)), dataSizes.at(i));
+            status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), mappedBuffer);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            status = commandQueue.enqueueUnmapMemObject(pinnedBuffer, mappedBuffer);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            continue;
+        }
         status = commandQueue.enqueueWriteBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
             throw IgorCLError(status);
@@ -152,6 +168,22 @@ void DoOpenCLCalculation(const int platformIndex, const int deviceIndex, const c
             continue;
         if ((openCLMemFlags.size() > i) && (openCLMemFlags.at(i) & (CL_MEM_USE_HOST_PTR | CL_MEM_READ_ONLY)))
             continue;
+        if ((memFlags.size() > i) && (memFlags.at(i) & IgorCLUsePinnedMemory)) {
+            cl::Buffer pinnedBuffer(context, CL_MEM_ALLOC_HOST_PTR, dataSizes.at(i), NULL, &status);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            void* mappedBuffer = commandQueue.enqueueMapBuffer(pinnedBuffer, true, CL_MAP_WRITE, 0, dataSizes.at(i), NULL, NULL, &status);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            status = commandQueue.enqueueReadBuffer(buffers.at(i), true, 0, dataSizes.at(i), mappedBuffer);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            memcpy(static_cast<void*>(dataPointers.at(i)), mappedBuffer, dataSizes.at(i));
+            status = commandQueue.enqueueUnmapMemObject(pinnedBuffer, mappedBuffer);
+            if (status != CL_SUCCESS)
+                throw IgorCLError(status);
+            continue;
+        }
         status = commandQueue.enqueueReadBuffer(buffers.at(i), false, 0, dataSizes.at(i), dataPointers.at(i));
         if (status != CL_SUCCESS)
             throw IgorCLError(status);
@@ -177,7 +209,7 @@ std::vector<char> CompileSource(const int platformIndex, const int deviceIndex, 
     
     // build the program
     buildLog.clear();
-    status = program.build("-cl-mad-enable");
+    status = program.build();
     buildLog = program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device);
     for (int i = 0; i < buildLog.size(); ++i) {
         if (buildLog[i] == '\n')
