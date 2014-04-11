@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <cctype>
+#include <memory>
 
 #include "IgorCLUtilities.h"
 #include "IgorCLConstants.h"
@@ -28,7 +29,7 @@ void StoreStringInTextWave(const std::string str, waveHndl textWave, IndexInt* i
 std::string GetStdStringFromHandle(const Handle handle) {
     int err;
     int strLength = GetHandleSize(handle);
-    boost::scoped_array<char> cString(new char[strLength + 1]);
+    std::unique_ptr<char[]> cString(new char[strLength + 1]);
     err = GetCStringFromHandle(handle, cString.get(), strLength);
     if (err)
         throw int(err);

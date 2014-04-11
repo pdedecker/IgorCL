@@ -13,7 +13,6 @@
 #include <string>
 #include <vector>
 #include <mutex>
-#include <boost/smart_ptr.hpp>
 
 #include "XOPStandardHeaders.h"
 
