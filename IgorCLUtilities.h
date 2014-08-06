@@ -74,5 +74,7 @@ private:
     cl::CommandQueue _commandQueue;
 };
 
+std::string OpenCLErrorCodeToSymbolicName(int errorCode);
+
 
 #endif /* defined(__IgorCL__IgorCLUtilities__) */

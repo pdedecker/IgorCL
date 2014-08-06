@@ -323,6 +323,7 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
         
         // if memory flags have been provided then require that there are as many flags as there are waves
         if ((memFlags.size() > 0) && (memFlags.size() != waves.size())) {
+            XOPNotice("the wave containing memory flags must one point for every wave passed to IgorCL\r");
             return GENERAL_BAD_VIBS;
         }
         
@@ -337,8 +338,8 @@ static int ExecuteIgorCL(IgorCLRuntimeParamsPtr p) {
     }
     catch (IgorCLError& e) {
         int errorCode = e.getErrorCode();
-        char noticeStr[50];
-        sprintf(noticeStr, "OpenCL error code %d\r", errorCode);
+        char noticeStr[200];
+        sprintf(noticeStr, "OpenCL error code %d (%s)\r", errorCode, OpenCLErrorCodeToSymbolicName(errorCode).c_str());
         XOPNotice(noticeStr);
         SetOperationNumVar("V_Flag", errorCode);
         if (quiet) {
